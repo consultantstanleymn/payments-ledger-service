@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Reads Collector file-exporter output (OTLP JSON lines).
-Asserts that one trace id holds: an HTTP server span, a JDBC span, a Kafka producer span and a
+Asserts that one trace id holds: an HTTP server span for the capture route, a JDBC span, a Kafka producer span and a
 Kafka consumer span. Exit code 0 on success, 1 on failure."""
 import json
 import sys
@@ -29,11 +29,15 @@ def spans(path):
                         yield sp
 
 
-def classify(sp):
+def classify(sp, route):
     a = attrs(sp)
     kind = sp.get("kind")
     found = set()
-    if kind == SERVER and ("http.request.method" in a or "http.method" in a):
+    if (
+        kind == SERVER
+        and ("http.request.method" in a or "http.method" in a)
+        and route in sp.get("name", "")
+    ):
         found.add("http-server")
     if kind == CLIENT and ("db.system" in a or "db.system.name" in a):
         found.add("jdbc")
@@ -44,10 +48,10 @@ def classify(sp):
     return found
 
 
-def main(path):
+def main(path, route):
     traces = defaultdict(set)
     for sp in spans(path):
-        traces[sp["traceId"]] |= classify(sp)
+        traces[sp["traceId"]] |= classify(sp, route)
     need = {"http-server", "jdbc", "kafka-producer", "kafka-consumer"}
     for tid, have in traces.items():
         if need <= have:
@@ -60,4 +64,10 @@ def main(path):
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1] if len(sys.argv) > 1 else ".data/otel/traces.jsonl"))
+    # usage: trace_check.py [spans.jsonl] [route-substring, default "capture"]
+    sys.exit(
+        main(
+            sys.argv[1] if len(sys.argv) > 1 else ".data/otel/traces.jsonl",
+            sys.argv[2] if len(sys.argv) > 2 else "capture",
+        )
+    )

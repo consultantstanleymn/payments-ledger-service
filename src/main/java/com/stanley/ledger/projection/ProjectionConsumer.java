@@ -1,7 +1,18 @@
 package com.stanley.ledger.projection;
 
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.context.propagation.TextMapGetter;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.header.Header;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
@@ -16,6 +27,7 @@ import tools.jackson.databind.json.JsonMapper;
  */
 @Component
 public class ProjectionConsumer {
+  private static final Tracer TRACER = GlobalOpenTelemetry.getTracer("payments-ledger");
   private final JdbcClient jdbc;
   private final TransactionTemplate tx;
   private final JsonMapper json;
@@ -31,15 +43,57 @@ public class ProjectionConsumer {
    * its own id. A batch that fails is retried as a whole, and the dedupe rows make that safe.
    */
   @KafkaListener(topics = "ledger.events", groupId = "balance-projection", batch = "true")
-  public void onBatch(List<String> payloads) {
+  public void onBatch(List<ConsumerRecord<String, String>> records) {
     tx.executeWithoutResult(status -> {
       // The projection can be rebuilt from Kafka, so a lost last commit after a crash is fine.
       jdbc.sql("SET LOCAL synchronous_commit = off").update();
-      for (String payload : payloads) {
-        applyOne(payload);
+      for (ConsumerRecord<String, String> record : records) {
+        applyWithSpan(record);
       }
     });
   }
+
+  /**
+   * The OpenTelemetry agent links a batch span to its messages and does not parent it. To keep one
+   * trace from the HTTP request to the projection, this makes one consumer span per record. Its
+   * parent is the producer span, read from the traceparent header that the agent put on the record.
+   */
+  private void applyWithSpan(ConsumerRecord<String, String> record) {
+    Header h = record.headers().lastHeader("traceparent");
+    Context parent =
+        W3CTraceContextPropagator.getInstance()
+            .extract(
+                Context.root(),
+                h == null ? null : new String(h.value(), StandardCharsets.UTF_8),
+                TRACEPARENT);
+    Span span =
+        TRACER
+            .spanBuilder(record.topic() + " process")
+            .setSpanKind(SpanKind.CONSUMER)
+            .setParent(parent)
+            .setAttribute("messaging.system", "kafka")
+            .setAttribute("messaging.operation", "process")
+            .setAttribute("messaging.destination.name", record.topic())
+            .startSpan();
+    try (Scope ignored = span.makeCurrent()) {
+      applyOne(record.value());
+    } finally {
+      span.end();
+    }
+  }
+
+  private static final TextMapGetter<String> TRACEPARENT =
+      new TextMapGetter<>() {
+        @Override
+        public Iterable<String> keys(String carrier) {
+          return List.of("traceparent");
+        }
+
+        @Override
+        public String get(String carrier, String key) {
+          return "traceparent".equals(key) ? carrier : null;
+        }
+      };
 
   /** Returns true when the event changed the projection, false when it was a duplicate. */
   public boolean apply(String payload) {

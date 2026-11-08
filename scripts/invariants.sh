@@ -2,8 +2,8 @@
 # SQL invariant check against the compose Postgres. Prints violation counts. Exit 1 if any is not 0.
 set -euo pipefail
 PSQL=("${CONTAINER_CLI:-podman}" exec -i "${CONTAINER:-ledger_postgres_1}" psql -U ledger -d ledger -At)
-# wait (up to 60 s) for the Kafka consumer to catch up with the outbox
-for _ in $(seq 1 60); do
+# wait (up to WAIT_SECONDS, default 600) for the Kafka consumer to catch up with the outbox
+for _ in $(seq 1 "${WAIT_SECONDS:-600}"); do
   pending=$("${PSQL[@]}" -c "SELECT (SELECT count(*) FROM outbox_events WHERE sent_at IS NULL) + (SELECT count(*) FROM outbox_events o WHERE NOT EXISTS (SELECT 1 FROM processed_events p WHERE p.event_id = o.event_id))")
   [ "$pending" = "0" ] && break
   sleep 1

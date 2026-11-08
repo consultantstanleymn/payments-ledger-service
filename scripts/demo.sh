@@ -21,8 +21,9 @@ echo "# fund the buyer with 100.00 USD"
 post /transfers "fund-$RUN" "{\"fromAccountId\":\"$BANK\",\"toAccountId\":\"$BUYER\",\"amountMinor\":10000}"; echo
 
 echo "# authorize 40.00 (hold)"
-PAY=$(post /payments "auth-$RUN" "{\"payerAccountId\":\"$BUYER\",\"payeeAccountId\":\"$SELLER\",\"amountMinor\":4000}" | tee /dev/stderr | field id)
-echo
+AUTH=$(post /payments "auth-$RUN" "{\"payerAccountId\":\"$BUYER\",\"payeeAccountId\":\"$SELLER\",\"amountMinor\":4000}")
+echo "$AUTH"
+PAY=$(echo "$AUTH" | field id)
 echo "# buyer balance with hold"
 curl -sS "$BASE/accounts/$BUYER/balance" -H "X-Api-Key: $KEY"; echo
 
