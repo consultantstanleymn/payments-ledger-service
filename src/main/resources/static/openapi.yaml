@@ -2,6 +2,9 @@ openapi: 3.0.3
 info:
   title: Payments Ledger Service
   version: 0.1.0
+  contact:
+    name: Stanley Sujith Nelavala
+    url: https://github.com/consultantstanleymn
   description: >
     Double-entry ledger. All amounts are integers in minor units (cents).
     Every POST needs an Idempotency-Key header and an X-Api-Key header.
@@ -12,11 +15,22 @@ servers:
   - url: http://127.0.0.1:18080
 security:
   - ApiKey: []
+tags:
+  - name: Accounts
+    description: Create accounts and read balances.
+  - name: Transfers
+    description: Move money between accounts.
+  - name: Payments
+    description: Authorize, capture, void and refund payments.
+  - name: Reconciliation
+    description: Compare captured payments with a settlement file.
 paths:
   /accounts:
     post:
       operationId: createAccount
       summary: Create an account
+      description: Creates an account with a currency and an optional minimum balance. The account starts with a zero balance.
+      tags: [Accounts]
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -38,6 +52,8 @@ paths:
     get:
       operationId: getBalance
       summary: Balance from the ledger
+      description: Returns the balance computed from the ledger journal, which is the source of truth.
+      tags: [Accounts]
       parameters:
         - $ref: '#/components/parameters/Id'
       responses:
@@ -53,6 +69,8 @@ paths:
     get:
       operationId: getProjection
       summary: Balance from the Kafka read model. It can lag the ledger.
+      description: Returns the balance from the read model that is built from Kafka events. It can lag behind the ledger.
+      tags: [Accounts]
       parameters:
         - $ref: '#/components/parameters/Id'
       responses:
@@ -68,6 +86,8 @@ paths:
     post:
       operationId: createTransfer
       summary: Move money between two accounts
+      description: Moves money between two accounts in one database transaction. Uses an Idempotency-Key so a retry never moves money twice.
+      tags: [Transfers]
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -95,6 +115,8 @@ paths:
     post:
       operationId: authorizePayment
       summary: Authorize a payment (place a hold)
+      description: Places a hold on the payer account for the payment amount. Uses an Idempotency-Key so a retry never creates a second hold.
+      tags: [Payments]
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -118,6 +140,8 @@ paths:
     get:
       operationId: getPayment
       summary: Read a payment
+      description: Returns the current state of a payment and its amounts.
+      tags: [Payments]
       parameters:
         - $ref: '#/components/parameters/Id'
       responses:
@@ -133,6 +157,8 @@ paths:
     post:
       operationId: capturePayment
       summary: Capture an authorized payment, in full or in part
+      description: Turns a hold into a posted transfer, in full or in part. The remaining hold is released.
+      tags: [Payments]
       parameters:
         - $ref: '#/components/parameters/Id'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -156,6 +182,8 @@ paths:
     post:
       operationId: voidPayment
       summary: Release the hold of an authorized payment
+      description: Releases the hold of an authorized payment so the money is available again.
+      tags: [Payments]
       parameters:
         - $ref: '#/components/parameters/Id'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -172,6 +200,8 @@ paths:
     post:
       operationId: refundPayment
       summary: Refund part or all of a captured payment
+      description: Returns part or all of a captured payment to the payer. The total refunded never exceeds the captured amount.
+      tags: [Payments]
       parameters:
         - $ref: '#/components/parameters/Id'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -196,6 +226,8 @@ paths:
     post:
       operationId: runReconciliation
       summary: Compare captured payments with a settlement CSV (payment_id,amount_minor)
+      description: Compares captured payments with a settlement CSV and stores a report of matched, missing and mismatched payments.
+      tags: [Reconciliation]
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -217,6 +249,8 @@ paths:
     get:
       operationId: latestReconciliation
       summary: Most recent report
+      description: Returns the most recent reconciliation report.
+      tags: [Reconciliation]
       responses:
         '200':
           description: Report
@@ -230,6 +264,8 @@ paths:
     get:
       operationId: getReconciliation
       summary: One report
+      description: Returns one reconciliation report by id.
+      tags: [Reconciliation]
       parameters:
         - $ref: '#/components/parameters/Id'
       responses:
