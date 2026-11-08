@@ -43,11 +43,17 @@ class KafkaFlowIT extends IntegrationBase {
     while (relay.pollOnce() > 0) {}
   }
 
-  void awaitProjection(long expectedEvents) throws InterruptedException {
+  /** Waits until the consumer has processed every event that is in the outbox right now. */
+  void awaitProjection(long ignored) throws InterruptedException {
     long deadline = System.currentTimeMillis() + 90_000;
     while (System.currentTimeMillis() < deadline) {
-      long n = jdbc.sql("SELECT count(*) FROM processed_events").query(Long.class).single();
-      if (n >= expectedEvents) return;
+      long missing =
+          jdbc.sql(
+                  "SELECT count(*) FROM outbox_events o WHERE NOT EXISTS"
+                      + " (SELECT 1 FROM processed_events p WHERE p.event_id = o.event_id)")
+              .query(Long.class)
+              .single();
+      if (missing == 0) return;
       Thread.sleep(250);
     }
     throw new AssertionError("projection did not catch up");
@@ -112,9 +118,19 @@ class KafkaFlowIT extends IntegrationBase {
         .as("at least once: the crashed 7 arrive twice")
         .isGreaterThanOrEqualTo(7);
 
-    long processed = jdbc.sql("SELECT count(*) FROM processed_events").query(Long.class).single();
+    // Only this test's events count. Late events of earlier tests may still be in the topic.
+    UUID[] mine = eventIds.stream().map(UUID::fromString).toArray(UUID[]::new);
+    UUID[] myAccounts = ids.toArray(new UUID[0]);
+    long processed =
+        jdbc.sql("SELECT count(*) FROM processed_events WHERE event_id = ANY (:e)")
+            .param("e", mine)
+            .query(Long.class)
+            .single();
     long applied =
-        jdbc.sql("SELECT sum(event_count) FROM balance_projection").query(Long.class).single();
+        jdbc.sql("SELECT sum(event_count) FROM balance_projection WHERE account_id = ANY (:a)")
+            .param("a", myAccounts)
+            .query(Long.class)
+            .single();
     assertThat(processed).isEqualTo(total);
     assertThat(applied).as("projection applied each event once").isEqualTo(total);
     System.out.println(

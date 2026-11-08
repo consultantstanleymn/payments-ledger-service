@@ -1,0 +1,405 @@
+openapi: 3.0.3
+info:
+  title: Payments Ledger Service
+  version: 0.1.0
+  description: >
+    Double-entry ledger. All amounts are integers in minor units (cents).
+    Every POST needs an Idempotency-Key header and an X-Api-Key header.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: http://127.0.0.1:18080
+security:
+  - ApiKey: []
+paths:
+  /accounts:
+    post:
+      operationId: createAccount
+      summary: Create an account
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAccount'
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '422':
+          $ref: '#/components/responses/Error'
+  /accounts/{id}/balance:
+    get:
+      operationId: getBalance
+      summary: Balance from the ledger
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Balance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '404':
+          $ref: '#/components/responses/Error'
+  /accounts/{id}/balance/projection:
+    get:
+      operationId: getProjection
+      summary: Balance from the Kafka read model. It can lag the ledger.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Projection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Projection'
+        '404':
+          $ref: '#/components/responses/Error'
+  /transfers:
+    post:
+      operationId: createTransfer
+      summary: Move money between two accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transfer'
+      responses:
+        '201':
+          description: Transfer posted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transactionId:
+                    type: string
+                    format: uuid
+        '409':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+  /payments:
+    post:
+      operationId: authorizePayment
+      summary: Authorize a payment (place a hold)
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Authorize'
+      responses:
+        '201':
+          description: Authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '409':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+  /payments/{id}:
+    get:
+      operationId: getPayment
+      summary: Read a payment
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Payment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '404':
+          $ref: '#/components/responses/Error'
+  /payments/{id}/capture:
+    post:
+      operationId: capturePayment
+      summary: Capture an authorized payment, in full or in part
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Amount'
+      responses:
+        '200':
+          description: Captured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '409':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+  /payments/{id}/void:
+    post:
+      operationId: voidPayment
+      summary: Release the hold of an authorized payment
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Voided
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '409':
+          $ref: '#/components/responses/Error'
+  /payments/{id}/refund:
+    post:
+      operationId: refundPayment
+      summary: Refund part or all of a captured payment
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Amount'
+      responses:
+        '200':
+          description: Refunded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '409':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+  /reconciliations:
+    post:
+      operationId: runReconciliation
+      summary: Compare captured payments with a settlement CSV (payment_id,amount_minor)
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          text/csv:
+            schema:
+              type: string
+      responses:
+        '201':
+          description: Report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReconReport'
+        '422':
+          $ref: '#/components/responses/Error'
+  /reconciliations/latest:
+    get:
+      operationId: latestReconciliation
+      summary: Most recent report
+      responses:
+        '200':
+          description: Report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReconReport'
+        '404':
+          $ref: '#/components/responses/Error'
+  /reconciliations/{id}:
+    get:
+      operationId: getReconciliation
+      summary: One report
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReconReport'
+        '404':
+          $ref: '#/components/responses/Error'
+components:
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+  responses:
+    Error:
+      description: Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+    Amount:
+      type: object
+      properties:
+        amountMinor:
+          type: integer
+          format: int64
+          minimum: 1
+    CreateAccount:
+      type: object
+      required: [name, currency]
+      properties:
+        name:
+          type: string
+        currency:
+          type: string
+          example: USD
+        floorMinor:
+          type: integer
+          format: int64
+          maximum: 0
+          description: Lowest allowed balance. Zero or negative.
+    Account:
+      type: object
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        currency:
+          type: string
+        floorMinor:
+          type: integer
+          format: int64
+        postedMinor:
+          type: integer
+          format: int64
+        heldMinor:
+          type: integer
+          format: int64
+        availableMinor:
+          type: integer
+          format: int64
+    Projection:
+      type: object
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        postedMinor:
+          type: integer
+          format: int64
+        heldMinor:
+          type: integer
+          format: int64
+        eventCount:
+          type: integer
+          format: int64
+    Transfer:
+      type: object
+      required: [fromAccountId, toAccountId, amountMinor]
+      properties:
+        fromAccountId:
+          type: string
+          format: uuid
+        toAccountId:
+          type: string
+          format: uuid
+        amountMinor:
+          type: integer
+          format: int64
+          minimum: 1
+    Authorize:
+      type: object
+      required: [payerAccountId, payeeAccountId, amountMinor]
+      properties:
+        payerAccountId:
+          type: string
+          format: uuid
+        payeeAccountId:
+          type: string
+          format: uuid
+        amountMinor:
+          type: integer
+          format: int64
+          minimum: 1
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        payerId:
+          type: string
+          format: uuid
+        payeeId:
+          type: string
+          format: uuid
+        currency:
+          type: string
+        authorizedMinor:
+          type: integer
+          format: int64
+        capturedMinor:
+          type: integer
+          format: int64
+        refundedMinor:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum: [AUTHORIZED, CAPTURED, VOIDED]
+    ReconReport:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        matched:
+          type: integer
+        missing:
+          type: integer
+        mismatched:
+          type: integer
+        unexpected:
+          type: integer
+        details:
+          type: string
+          description: JSON text with the ids behind each count.

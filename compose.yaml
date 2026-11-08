@@ -1,0 +1,78 @@
+# Local stack. Every port is bound to 127.0.0.1. Run with: podman-compose up -d
+name: ledger
+services:
+  postgres:
+    image: docker.io/library/postgres:16-alpine
+    environment:
+      POSTGRES_DB: ledger
+      POSTGRES_USER: ledger
+      POSTGRES_PASSWORD: ledger
+    ports:
+      - "127.0.0.1:18432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ledger -d ledger"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  redpanda:
+    image: docker.io/redpandadata/redpanda:v25.1.7
+    command:
+      - redpanda
+      - start
+      - --smp=1
+      - --memory=512M
+      - --reserve-memory=0M
+      - --overprovisioned
+      - --node-id=0
+      - --check=false
+      - --kafka-addr=internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr=internal://redpanda:9092,external://127.0.0.1:18092
+    ports:
+      - "127.0.0.1:18092:19092"
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -q 'Healthy:.*true'"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  jaeger:
+    image: docker.io/jaegertracing/all-in-one:1.66.0
+    ports:
+      - "127.0.0.1:18686:16686"
+
+  otel-collector:
+    image: docker.io/otel/opentelemetry-collector-contrib:0.120.0
+    command: ["--config=/etc/otel/collector.yaml"]
+    user: "0"
+    volumes:
+      - ./otel/collector.yaml:/etc/otel/collector.yaml:ro,z
+      - ./.data/otel:/data:z
+    ports:
+      - "127.0.0.1:18318:4318"
+    depends_on:
+      - jaeger
+
+  app:
+    build: .
+    image: payments-ledger-service:local
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/ledger
+      KAFKA_BOOTSTRAP: redpanda:9092
+      PORT: "8080"
+      OTEL_SERVICE_NAME: payments-ledger
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+      OTEL_BSP_SCHEDULE_DELAY: "500"
+    ports:
+      - "127.0.0.1:18080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    restart: on-failure

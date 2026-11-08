@@ -1,0 +1,3 @@
+*
+!target/payments-ledger-service-0.1.0.jar
+!otel/opentelemetry-javaagent.jar

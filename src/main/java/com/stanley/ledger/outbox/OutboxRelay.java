@@ -41,7 +41,7 @@ public class OutboxRelay {
       JdbcClient jdbc,
       TransactionTemplate tx,
       KafkaTemplate<String, String> kafka,
-      @Value("${ledger.relay.batch-size:100}") int batchSize) {
+      @Value("${ledger.relay.batch-size:500}") int batchSize) {
     this.jdbc = jdbc;
     this.tx = tx;
     this.kafka = kafka;
@@ -88,34 +88,46 @@ public class OutboxRelay {
                     rs.getString("traceparent")))
             .list();
     int sent = 0;
+    List<java.util.concurrent.Future<?>> acks = new java.util.ArrayList<>();
     for (Row r : rows) {
       if (crashAfterSends.get() >= 0 && sent >= crashAfterSends.get()) {
+        awaitAll(acks); // the sends before the crash really reach Kafka
         throw new IllegalStateException("simulated relay crash after " + sent + " sends");
       }
-      publish(r);
+      acks.add(publish(r));
       sent++;
     }
-    for (Row r : rows) {
-      jdbc.sql("UPDATE outbox_events SET sent_at = now() WHERE seq = :s")
-          .param("s", r.seq)
+    // Sends of one batch are in flight together. The producer keeps order per key.
+    awaitAll(acks);
+    if (!rows.isEmpty()) {
+      jdbc.sql("UPDATE outbox_events SET sent_at = now() WHERE seq = ANY (:seqs)")
+          .param("seqs", rows.stream().mapToLong(r -> r.seq).boxed().toArray(Long[]::new))
           .update();
     }
     return rows.size();
   }
 
-  private void publish(Row r) {
+  private java.util.concurrent.Future<?> publish(Row r) {
     // Restore the trace of the original HTTP request, so the Kafka producer span joins it.
     Span parent = remoteParent(r.traceparent);
     try (Scope ignored = parent.makeCurrent()) {
       ProducerRecord<String, String> rec =
           new ProducerRecord<>(TOPIC, r.aggregateId.toString(), r.payload);
       rec.headers().add("event-id", r.eventId.toString().getBytes(StandardCharsets.UTF_8));
-      kafka.send(rec).get(10, TimeUnit.SECONDS);
+      return kafka.send(rec);
+    }
+  }
+
+  private static void awaitAll(List<java.util.concurrent.Future<?>> acks) {
+    try {
+      for (var f : acks) {
+        f.get(30, TimeUnit.SECONDS);
+      }
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new IllegalStateException(e);
     } catch (Exception e) {
-      throw new IllegalStateException("publish failed for event " + r.eventId, e);
+      throw new IllegalStateException("publish failed", e);
     }
   }
 

@@ -1,10 +1,11 @@
 package com.stanley.ledger.projection;
 
+import java.util.List;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -16,21 +17,37 @@ import tools.jackson.databind.json.JsonMapper;
 @Component
 public class ProjectionConsumer {
   private final JdbcClient jdbc;
+  private final TransactionTemplate tx;
   private final JsonMapper json;
 
-  public ProjectionConsumer(JdbcClient jdbc, JsonMapper json) {
+  public ProjectionConsumer(JdbcClient jdbc, TransactionTemplate tx, JsonMapper json) {
     this.jdbc = jdbc;
+    this.tx = tx;
     this.json = json;
   }
 
-  @KafkaListener(topics = "ledger.events", groupId = "balance-projection")
-  public void onMessage(String payload) {
-    apply(payload);
+  /**
+   * One database transaction per polled batch, not per event. Each event is still deduplicated by
+   * its own id. A batch that fails is retried as a whole, and the dedupe rows make that safe.
+   */
+  @KafkaListener(topics = "ledger.events", groupId = "balance-projection", batch = "true")
+  public void onBatch(List<String> payloads) {
+    tx.executeWithoutResult(status -> {
+      // The projection can be rebuilt from Kafka, so a lost last commit after a crash is fine.
+      jdbc.sql("SET LOCAL synchronous_commit = off").update();
+      for (String payload : payloads) {
+        applyOne(payload);
+      }
+    });
   }
 
   /** Returns true when the event changed the projection, false when it was a duplicate. */
-  @Transactional
   public boolean apply(String payload) {
+    Boolean changed = tx.execute(status -> applyOne(payload));
+    return Boolean.TRUE.equals(changed);
+  }
+
+  private boolean applyOne(String payload) {
     JsonNode n = json.readTree(payload);
     UUID eventId = UUID.fromString(n.get("eventId").asString());
     int fresh =
