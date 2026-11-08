@@ -1,0 +1,138 @@
+package com.stanley.ledger.outbox;
+
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanContext;
+import io.opentelemetry.api.trace.TraceFlags;
+import io.opentelemetry.api.trace.TraceState;
+import io.opentelemetry.context.Scope;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionTemplate;
+
+/**
+ * Polls unsent outbox rows and publishes them. FOR UPDATE SKIP LOCKED lets two relays run without
+ * taking the same rows. Delivery is at least once: a crash after the send but before the commit
+ * sends the row again. The consumer removes duplicates.
+ */
+@Component
+public class OutboxRelay {
+  public static final String TOPIC = "ledger.events";
+
+  private final JdbcClient jdbc;
+  private final TransactionTemplate tx;
+  private final KafkaTemplate<String, String> kafka;
+  private final int batchSize;
+  private final AtomicBoolean running = new AtomicBoolean(true);
+
+  /** Test hook: simulate a crash after this many sends in a batch. Negative means off. */
+  private final AtomicInteger crashAfterSends = new AtomicInteger(-1);
+
+  public OutboxRelay(
+      JdbcClient jdbc,
+      TransactionTemplate tx,
+      KafkaTemplate<String, String> kafka,
+      @Value("${ledger.relay.batch-size:100}") int batchSize) {
+    this.jdbc = jdbc;
+    this.tx = tx;
+    this.kafka = kafka;
+    this.batchSize = batchSize;
+  }
+
+  public void stop() {
+    running.set(false);
+  }
+
+  public void start() {
+    running.set(true);
+  }
+
+  public void crashAfterSends(int n) {
+    crashAfterSends.set(n);
+  }
+
+  @Scheduled(fixedDelayString = "${ledger.relay.poll-ms:200}")
+  public void scheduledPoll() {
+    if (running.get()) {
+      pollOnce();
+    }
+  }
+
+  /** Publishes one batch. Returns the number of rows marked sent. */
+  public int pollOnce() {
+    Integer n = tx.execute(status -> pollInTransaction());
+    return n == null ? 0 : n;
+  }
+
+  private int pollInTransaction() {
+    List<Row> rows =
+        jdbc.sql(
+                "SELECT seq, event_id, aggregate_id, payload, traceparent FROM outbox_events"
+                    + " WHERE sent_at IS NULL ORDER BY seq LIMIT :n FOR UPDATE SKIP LOCKED")
+            .param("n", batchSize)
+            .query((rs, i) ->
+                new Row(
+                    rs.getLong("seq"),
+                    rs.getObject("event_id", UUID.class),
+                    rs.getObject("aggregate_id", UUID.class),
+                    rs.getString("payload"),
+                    rs.getString("traceparent")))
+            .list();
+    int sent = 0;
+    for (Row r : rows) {
+      if (crashAfterSends.get() >= 0 && sent >= crashAfterSends.get()) {
+        throw new IllegalStateException("simulated relay crash after " + sent + " sends");
+      }
+      publish(r);
+      sent++;
+    }
+    for (Row r : rows) {
+      jdbc.sql("UPDATE outbox_events SET sent_at = now() WHERE seq = :s")
+          .param("s", r.seq)
+          .update();
+    }
+    return rows.size();
+  }
+
+  private void publish(Row r) {
+    // Restore the trace of the original HTTP request, so the Kafka producer span joins it.
+    Span parent = remoteParent(r.traceparent);
+    try (Scope ignored = parent.makeCurrent()) {
+      ProducerRecord<String, String> rec =
+          new ProducerRecord<>(TOPIC, r.aggregateId.toString(), r.payload);
+      rec.headers().add("event-id", r.eventId.toString().getBytes(StandardCharsets.UTF_8));
+      kafka.send(rec).get(10, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IllegalStateException(e);
+    } catch (Exception e) {
+      throw new IllegalStateException("publish failed for event " + r.eventId, e);
+    }
+  }
+
+  static Span remoteParent(String traceparent) {
+    if (traceparent == null) {
+      return Span.getInvalid();
+    }
+    String[] p = traceparent.split("-");
+    if (p.length != 4) {
+      return Span.getInvalid();
+    }
+    SpanContext sc =
+        SpanContext.createFromRemoteParent(
+            p[1], p[2], TraceFlags.fromHex(p[3], 0), TraceState.getDefault());
+    return Span.wrap(sc);
+  }
+
+  private record Row(
+      long seq, UUID eventId, UUID aggregateId, String payload, String traceparent) {}
+}
