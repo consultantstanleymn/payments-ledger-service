@@ -1,63 +1,64 @@
 .container {
   display: grid;
-  gap: 2rem;
+  gap: var(--space-6);
 }
 
 .section {
   display: grid;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .reportGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-  gap: 1rem;
+  gap: var(--space-4);
   margin: 0;
   padding: 0;
 }
 
 .reportGrid div {
-  border: 1px solid var(--color-border, #d0d7de);
-  border-radius: 0.5rem;
-  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
 }
 
 .reportGrid dt {
-  font-size: 0.9rem;
-  color: var(--color-muted, #57606a);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
 }
 
 .reportGrid dd {
-  margin: 0.25rem 0 0;
-  font-size: 1.5rem;
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-xxl);
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .rawDetails {
   white-space: pre-wrap;
-  background: var(--color-code-bg, #f6f8fa);
-  border: 1px solid var(--color-border, #d0d7de);
-  border-radius: 0.5rem;
-  padding: 1rem;
+  background: var(--color-code-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
 }
 
 .breakList {
   display: grid;
-  gap: 0.5rem;
+  gap: var(--space-2);
   margin: 0;
-  padding-left: 1.25rem;
+  padding-left: var(--space-5);
 }
 
 .form {
   display: grid;
   grid-template-columns: minmax(12rem, 1fr) minmax(8rem, 12rem) auto;
-  gap: 1rem;
+  gap: var(--space-4);
   align-items: end;
 }
 
 .field {
   display: grid;
-  gap: 0.35rem;
+  gap: var(--space-1);
 }
 
 .redriveButton {

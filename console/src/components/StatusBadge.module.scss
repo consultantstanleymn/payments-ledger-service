@@ -1,28 +1,31 @@
 .badge {
   border: 1px solid currentColor;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   display: inline-flex;
-  font-size: 0.85rem;
+  align-items: center;
+  font-size: var(--font-size-sm);
   font-weight: 600;
-  padding: 0.15rem 0.5rem;
+  line-height: 1.2;
+  padding: var(--space-1) var(--space-2);
+  white-space: nowrap;
 }
 
 .authorized {
-  background: #e6f4ff;
-  color: #005a8c;
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
 }
 
 .captured {
-  background: #e8f5e9;
-  color: #1b5e20;
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
 }
 
 .voided {
-  background: #f3e5f5;
-  color: #6a1b9a;
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
 }
 
 .default {
-  background: #eeeeee;
-  color: #333333;
+  background: var(--color-neutral-bg);
+  color: var(--color-neutral-text);
 }
