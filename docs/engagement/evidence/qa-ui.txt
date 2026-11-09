@@ -1,0 +1,11 @@
+Selenium UI run. Date 2026-11-09. Base commit 09ab26f.
+Command: qa-suite/scripts/qa-run.sh ui against the compose stack (console served at http://127.0.0.1:18080/console/).
+Browser: docker.io/selenium/standalone-chromium:4.52.0-20261101 in container ledger-qa-selenium, host network, port 26744 (the script waits for /status ready true).
+Label: VERIFIED LOCALLY. The container is removed after the run.
+
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 14.64 s -- in com.stanley.ledger.qa.ui.ConsoleUiTest
+[WARNING] Tests run: 16, Failures: 0, Errors: 0, Skipped: 16, Time elapsed: 0.099 s -- in com.stanley.ledger.qa.bdd.RunCucumberTest
+[INFO] Tests run: 22, Failures: 0, Errors: 0, Skipped: 16
+[INFO] BUILD SUCCESS
+reports:
+DONE 0
