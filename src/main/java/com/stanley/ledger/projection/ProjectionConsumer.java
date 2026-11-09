@@ -1,5 +1,7 @@
 package com.stanley.ledger.projection;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
@@ -9,6 +11,7 @@ import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import io.opentelemetry.context.propagation.TextMapGetter;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -31,8 +34,11 @@ public class ProjectionConsumer {
   private final JdbcClient jdbc;
   private final TransactionTemplate tx;
   private final JsonMapper json;
+  private final Timer lag;
 
-  public ProjectionConsumer(JdbcClient jdbc, TransactionTemplate tx, JsonMapper json) {
+  public ProjectionConsumer(
+      JdbcClient jdbc, TransactionTemplate tx, JsonMapper json, MeterRegistry registry) {
+    this.lag = Timer.builder("ledger.projection.lag").register(registry);
     this.jdbc = jdbc;
     this.tx = tx;
     this.json = json;
@@ -76,9 +82,27 @@ public class ProjectionConsumer {
             .setAttribute("messaging.destination.name", record.topic())
             .startSpan();
     try (Scope ignored = span.makeCurrent()) {
-      applyOne(record.value());
+      if (applyOne(record.value())) {
+        recordLag(record);
+      }
     } finally {
       span.end();
+    }
+  }
+
+  /** Time from outbox insert to projection apply. No sample when the header is absent. */
+  private void recordLag(ConsumerRecord<String, String> record) {
+    Header created = record.headers().lastHeader("ledger-created-at");
+    if (created == null) {
+      return;
+    }
+    try {
+      long millis =
+          System.currentTimeMillis()
+              - Long.parseLong(new String(created.value(), StandardCharsets.UTF_8));
+      lag.record(Duration.ofMillis(Math.max(0, millis)));
+    } catch (NumberFormatException ignored) {
+      // A bad header gives no sample.
     }
   }
 

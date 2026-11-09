@@ -27,6 +27,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Component
 public class OutboxRelay {
   public static final String TOPIC = "ledger.events";
+  public static final String CREATED_AT_HEADER = "ledger-created-at";
 
   private final JdbcClient jdbc;
   private final TransactionTemplate tx;
@@ -76,7 +77,7 @@ public class OutboxRelay {
   private int pollInTransaction() {
     List<Row> rows =
         jdbc.sql(
-                "SELECT seq, event_id, aggregate_id, payload, traceparent FROM outbox_events"
+                "SELECT seq, event_id, aggregate_id, payload, traceparent, created_at FROM outbox_events"
                     + " WHERE sent_at IS NULL ORDER BY seq LIMIT :n FOR UPDATE SKIP LOCKED")
             .param("n", batchSize)
             .query((rs, i) ->
@@ -85,7 +86,8 @@ public class OutboxRelay {
                     rs.getObject("event_id", UUID.class),
                     rs.getObject("aggregate_id", UUID.class),
                     rs.getString("payload"),
-                    rs.getString("traceparent")))
+                    rs.getString("traceparent"),
+                    rs.getTimestamp("created_at").getTime()))
             .list();
     int sent = 0;
     List<java.util.concurrent.Future<?>> acks = new java.util.ArrayList<>();
@@ -114,6 +116,9 @@ public class OutboxRelay {
       ProducerRecord<String, String> rec =
           new ProducerRecord<>(TOPIC, r.aggregateId.toString(), r.payload);
       rec.headers().add("event-id", r.eventId.toString().getBytes(StandardCharsets.UTF_8));
+      rec.headers()
+          .add(
+              CREATED_AT_HEADER, Long.toString(r.createdAtMillis).getBytes(StandardCharsets.UTF_8));
       return kafka.send(rec);
     }
   }
@@ -146,5 +151,10 @@ public class OutboxRelay {
   }
 
   private record Row(
-      long seq, UUID eventId, UUID aggregateId, String payload, String traceparent) {}
+      long seq,
+      UUID eventId,
+      UUID aggregateId,
+      String payload,
+      String traceparent,
+      long createdAtMillis) {}
 }
