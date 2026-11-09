@@ -1,0 +1,23 @@
+# Evidence: Local baseline of the unchanged service
+label: VERIFIED LOCALLY
+date: 2026-11-09 06:12 UTC
+code commit: 00a1fce3fc929432738fb99c6485c1d4b13023b3
+working tree clean at run time: yes
+machine: MacBook Pro (mid 2015), 8 logical CPUs, 16 GB RAM, Fedora 44, podman 5.8.7 (measured on one laptop)
+command: ./mvnw -B verify -DskipITs; then DOCKER_HOST=unix:///run/user/$(id -u)/podman/podman.sock TESTCONTAINERS_RYUK_DISABLED=true ./mvnw -B verify
+notes: Unit tests and integration tests pass at the baseline commit. No GitHub Actions run is claimed.
+---
+== fast gate: ./mvnw -B verify -DskipITs
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.467 s -- in com.stanley.ledger.ledger.LedgerPropertiesTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+real	0m5.686s
+== full: ./mvnw -B verify (ITs, podman socket, HEAVY lock)
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 13.18 s -- in com.stanley.ledger.ApiIT
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.235 s -- in com.stanley.ledger.ConcurrencyIT
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 10.84 s -- in com.stanley.ledger.KafkaFlowIT
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.420 s -- in com.stanley.ledger.ReconciliationIT
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+real	0m33.827s
