@@ -1,0 +1,17 @@
+.wrap {
+  margin-top: 1rem;
+}
+
+.button {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #444;
+  background: #fff;
+  cursor: pointer;
+}
+
+.button:disabled {
+  color: #888;
+  border-color: #ccc;
+  cursor: default;
+}
+
