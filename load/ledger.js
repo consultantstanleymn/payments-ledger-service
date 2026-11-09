@@ -1,5 +1,6 @@
 // k6 load test. Mixed transfers (70%) and balance reads (30%).
-// Gates: error rate below 0.1% and zero balance-invariant violations. No latency gate on purpose.
+// Gates: error rate below 0.1%, zero balance-invariant violations, and the SLO thresholds on
+// transfers (p95 under 300 ms, error rate under 0.5 percent). A breach makes k6 exit with code 99.
 import http from 'k6/http';
 import { check } from 'k6';
 import { Counter } from 'k6/metrics';
@@ -14,18 +15,23 @@ const HEADERS = { 'X-Api-Key': __ENV.API_KEY || 'dev-key-local-only', 'Content-T
 const violations = new Counter('invariant_violations');
 
 export const options = {
+  // A slow database (the forced-fail run) makes account setup slow. Give it room.
+  setupTimeout: '300s',
   scenarios: {
     mixed: { executor: 'constant-vus', vus: VUS, duration: DURATION },
   },
   thresholds: {
     http_req_failed: ['rate<0.001'],
+    'http_req_duration{name:transfer}': [{ threshold: 'p(95)<300', abortOnFail: false }],
+    'http_req_failed{name:transfer}': [{ threshold: 'rate<0.005', abortOnFail: false }],
     invariant_violations: ['count==0'],
   },
 };
 
-function post(path, key, body) {
+function post(path, key, body, name) {
   return http.post(BASE + path, JSON.stringify(body), {
     headers: Object.assign({ 'Idempotency-Key': key }, HEADERS),
+    tags: { name: name || path },
   });
 }
 
@@ -51,7 +57,7 @@ export default function (data) {
       fromAccountId: data.ids[a],
       toAccountId: data.ids[b],
       amountMinor: 1 + Math.floor(Math.random() * 100),
-    });
+    }, 'transfer');
     check(r, { 'transfer 201': (x) => x.status === 201 });
   } else {
     const r = http.get(`${BASE}/accounts/${data.ids[Math.floor(Math.random() * n)]}/balance`, { headers: HEADERS });
