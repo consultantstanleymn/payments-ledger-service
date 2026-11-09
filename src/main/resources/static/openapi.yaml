@@ -298,6 +298,78 @@ paths:
                 $ref: '#/components/schemas/ReconReport'
         '404':
           $ref: '#/components/responses/Error'
+  /ops/accounts:
+    get:
+      operationId: listOpsAccounts
+      summary: List accounts for the operations console
+      description: Read-only account list. Newest first. Keyset paging with an opaque cursor.
+      parameters:
+        - name: currency
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: q
+          in: query
+          required: false
+          description: Case-insensitive name prefix. At most 64 characters.
+          schema:
+            type: string
+            maxLength: 64
+        - $ref: '#/components/parameters/OpsLimit'
+        - $ref: '#/components/parameters/OpsCursor'
+      responses:
+        '200':
+          description: One page of accounts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpsAccountsPage'
+        '400':
+          $ref: '#/components/responses/Error'
+  /ops/accounts/{id}/entries:
+    get:
+      operationId: listOpsAccountEntries
+      summary: List journal entries for one account
+      description: Read-only journal entries for one account. Newest first. Keyset paging with an opaque cursor.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/OpsLimit'
+        - $ref: '#/components/parameters/OpsCursor'
+      responses:
+        '200':
+          description: One page of journal entries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpsEntriesPage'
+        '400':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /ops/payments:
+    get:
+      operationId: listOpsPayments
+      summary: List payments for the operations console
+      description: Read-only payment list. Newest first. Keyset paging with an opaque cursor.
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [AUTHORIZED, CAPTURED, VOIDED]
+        - $ref: '#/components/parameters/OpsLimit'
+        - $ref: '#/components/parameters/OpsCursor'
+      responses:
+        '200':
+          description: One page of payments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpsPaymentsPage'
+        '400':
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     ApiKey:
@@ -316,6 +388,22 @@ components:
       name: Idempotency-Key
       in: header
       required: true
+      schema:
+        type: string
+    OpsLimit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+    OpsCursor:
+      name: cursor
+      in: query
+      required: false
+      description: Opaque cursor from nextCursor.
       schema:
         type: string
   responses:
@@ -468,3 +556,110 @@ components:
         details:
           type: string
           description: JSON text with the ids behind each count.
+    OpsAccount:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        currency:
+          type: string
+        postedMinor:
+          type: integer
+          format: int64
+        heldMinor:
+          type: integer
+          format: int64
+        availableMinor:
+          type: integer
+          format: int64
+        floorMinor:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
+    OpsEntry:
+      type: object
+      properties:
+        entryId:
+          type: integer
+          format: int64
+        txnId:
+          type: string
+          format: uuid
+        kind:
+          type: string
+        reference:
+          type: string
+          nullable: true
+        amountMinor:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
+    OpsPayment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        payerId:
+          type: string
+          format: uuid
+        payeeId:
+          type: string
+          format: uuid
+        currency:
+          type: string
+        authorizedMinor:
+          type: integer
+          format: int64
+        capturedMinor:
+          type: integer
+          format: int64
+        refundedMinor:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum: [AUTHORIZED, CAPTURED, VOIDED]
+        externalRef:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+    OpsAccountsPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OpsAccount'
+        nextCursor:
+          type: string
+          nullable: true
+    OpsEntriesPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OpsEntry'
+        nextCursor:
+          type: string
+          nullable: true
+    OpsPaymentsPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OpsPayment'
+        nextCursor:
+          type: string
+          nullable: true
