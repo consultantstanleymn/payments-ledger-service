@@ -1,0 +1,26 @@
+QA full run. Date 2026-11-09. Commit 043b575.
+Command: qa-suite/scripts/qa-run.sh all against the local compose stack. Label: VERIFIED LOCALLY. Laptop numbers.
+Counts: 5 Cucumber features, 16 scenarios; API suite 41 tests (Cucumber 16, REST Assured API and contract 15, data layer 4, ops paging 5, stack health 1); UI tests 6; flaky tests 0; JMeter gate PASS.
+
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.803 s -- in com.stanley.ledger.qa.api.StackHealthTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.011 s -- in com.stanley.ledger.qa.api.AccountsApiTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.759 s -- in com.stanley.ledger.qa.api.ContractTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.371 s -- in com.stanley.ledger.qa.api.NegativeApiTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.838 s -- in com.stanley.ledger.qa.api.DataLayerTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.718 s -- in com.stanley.ledger.qa.api.PaymentsApiTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.353 s -- in com.stanley.ledger.qa.api.OpsPagingApiTest
+[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.019 s -- in com.stanley.ledger.qa.bdd.RunCucumberTest
+[INFO] Tests run: 41, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 14.98 s -- in com.stanley.ledger.qa.ui.ConsoleUiTest
+[WARNING] Tests run: 16, Failures: 0, Errors: 0, Skipped: 16, Time elapsed: 0.125 s -- in com.stanley.ledger.qa.bdd.RunCucumberTest
+[INFO] Tests run: 22, Failures: 0, Errors: 0, Skipped: 16
+flaky tests: 0, failed every time: 0
+summary =  32348 in 00:02:29 =  217.5/s Avg:    65 Min:     0 Max:   723 Err:     0 (0.00%)
+
+sampler               samples   errorPct     p95 ms      limit status
+----------------------------------------------------------------------------
+Total                   32348      0.000      130.0        1.0 PASS
+authorize               10755      0.000       81.0      300.0 PASS
+capture                 10750      0.000      113.0      300.0 PASS
+get payment             10743      0.000      148.0      300.0 PASS
+gate status: PASS

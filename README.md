@@ -82,6 +82,34 @@ and axe-core WCAG 2.1 A and AA checks.
 
 ![Ops console accounts page](docs/img/console-accounts-light.png)
 
+## QA suite
+
+`qa-suite/` is a black-box test suite for the running ledger. It combines BDD scenarios, REST Assured API
+and JSON Schema contract tests, JDBC journal checks, Selenium WebDriver browser tests and a JMeter load plan.
+It is a separate Maven project, so it never changes the service build.
+
+The local full run on one laptop passed:
+
+- API suite: 41 tests, 0 failures. This includes 5 Cucumber features with 16 scenarios, 15 API and contract
+  tests, 4 data layer JDBC tests, 5 ops paging tests and 1 stack health test.
+- Selenium UI tests: 6 tests, 0 failures.
+- Flaky tests: 0.
+- JMeter gate: PASS, about 32,000 samples, 0 percent errors, p95 81 to 148 ms against a 300 ms limit.
+
+Evidence: `docs/engagement/evidence/qa-full.txt`, `docs/engagement/evidence/qa-ui.txt` and
+`docs/engagement/evidence/qa-jmeter.txt`. The `qa-suite` CI job in `.github/workflows/ci.yml` is authored
+and actionlint-checked only; it has not run on GitHub Actions.
+
+After the stack is up:
+
+```bash
+qa-suite/scripts/qa-run.sh all
+```
+
+Reports are under `qa-suite/target/surefire-reports`, `qa-suite/target/cucumber-report.html`,
+`qa-suite/target/flaky-report.md` and `qa-suite/target/jmeter/reports/ledger-payments`.
+See [qa-suite/README.md](qa-suite/README.md) and [docs/engagement/TEST-STRATEGY.md](docs/engagement/TEST-STRATEGY.md).
+
 ## Run it
 
 You need Java 25 (JDK), Maven, podman, podman-compose and k6.
