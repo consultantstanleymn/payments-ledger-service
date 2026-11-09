@@ -112,7 +112,7 @@ More: [docs/ONBOARDING.md](docs/ONBOARDING.md), [docs/RUNBOOK.md](docs/RUNBOOK.m
 | Load: 20 VUs, 2 minutes, error rate below 0.1 percent, zero invariant violations | `load/ledger.js` | 282 requests/s, p95 145 ms, 0.00 percent errors, 0 violations (measured on one laptop) |
 | OpenAPI file lists every route of the controller | `OpenApiSpecTest` | pass |
 
-Test totals: 4 unit and property tests, 11 integration tests, 0 failures.
+Test totals: 4 unit and property tests, 26 integration tests, 0 failures (`docs/engagement/evidence/full-gate-local.txt`).
 Full numbers and settings are in [docs/PERF.md](docs/PERF.md).
 
 ## Verified and not verified

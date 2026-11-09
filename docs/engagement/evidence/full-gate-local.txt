@@ -1,0 +1,22 @@
+# Evidence: full local gate (unit, property and all integration tests)
+label: VERIFIED LOCALLY
+date: 2026-11-09 11:35 UTC
+code commit: d3d2546527de866ef059840571c3dd51ec6c3cbc
+working tree clean at run time: yes
+machine: MacBook Pro (mid 2015), 8 logical CPUs, 16 GB RAM, Fedora 44, podman 5.8.7 (measured on one laptop)
+command: systemctl --user is-active podman.socket && DOCKER_HOST=unix:///run/user/$(id -u)/podman/podman.sock TESTCONTAINERS_RYUK_DISABLED=true nice -n 10 ./mvnw -B verify
+notes: Run on a fresh clone of main during the final review. Output filtered to test summary lines. Proves 4 unit and property tests and 26 integration tests pass with Postgres and Redpanda in Testcontainers on rootless podman.
+---
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.114 s -- in com.stanley.ledger.ledger.NoFloatingPointTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.021 s -- in com.stanley.ledger.OpenApiSpecTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.537 s -- in com.stanley.ledger.ledger.LedgerPropertiesTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 22.44 s -- in com.stanley.ledger.ReconciliationIT
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.451 s -- in com.stanley.ledger.MetricsIT
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 12.63 s -- in com.stanley.ledger.KafkaFlowIT
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 31.97 s -- in com.stanley.ledger.DeadLetterIT
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.134 s -- in com.stanley.ledger.ConcurrencyIT
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.271 s -- in com.stanley.ledger.CallerAuditIT
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.426 s -- in com.stanley.ledger.ApiIT
+[INFO] Tests run: 26, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
