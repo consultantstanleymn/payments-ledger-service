@@ -1,0 +1,65 @@
+rule_files:
+  - /r/blackbox.rules.yml
+evaluation_interval: 1m
+
+tests:
+  - name: LedgerProbeDown fires after 2m
+    interval: 30s
+    input_series:
+      - series: 'probe_success{job="blackbox-ledger",instance="http://app:8080/actuator/health/readiness"}'
+        values: '0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: LedgerProbeDown
+        exp_alerts:
+          - exp_labels:
+              severity: page
+              job: blackbox-ledger
+              instance: "http://app:8080/actuator/health/readiness"
+            exp_annotations:
+              summary: "Ledger readiness probe is failing"
+              runbook_url: "https://github.com/consultantstanleymn/payments-ledger-service/blob/main/docs/RUNBOOK.md#probe-alerts"
+
+  - name: LedgerProbeDown does not fire on a 1m blip
+    interval: 30s
+    input_series:
+      - series: 'probe_success{job="blackbox-ledger",instance="http://app:8080/actuator/health/readiness"}'
+        values: '0 0 1 0 0'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: LedgerProbeDown
+        exp_alerts: []
+
+  - name: LedgerProbeSlow needs 10m
+    interval: 30s
+    input_series:
+      - series: 'probe_duration_seconds{job="blackbox-ledger",instance="http://app:8080/actuator/health/readiness"}'
+        values: '0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: LedgerProbeSlow
+        exp_alerts:
+          - exp_labels:
+              severity: ticket
+              job: blackbox-ledger
+              instance: "http://app:8080/actuator/health/readiness"
+            exp_annotations:
+              summary: "Ledger readiness probe is slow"
+              runbook_url: "https://github.com/consultantstanleymn/payments-ledger-service/blob/main/docs/RUNBOOK.md#probe-alerts"
+
+  - name: ConsoleProbeDown fires after 2m
+    interval: 30s
+    input_series:
+      - series: 'probe_success{job="blackbox-console",instance="http://app:8080/console/"}'
+        values: '0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: ConsoleProbeDown
+        exp_alerts:
+          - exp_labels:
+              severity: page
+              job: blackbox-console
+              instance: "http://app:8080/console/"
+            exp_annotations:
+              summary: "Payments Ledger Console probe is failing"
+              runbook_url: "https://github.com/consultantstanleymn/payments-ledger-service/blob/main/docs/RUNBOOK.md#probe-alerts"

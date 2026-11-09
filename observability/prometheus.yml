@@ -8,3 +8,33 @@ scrape_configs:
     metrics_path: /actuator/prometheus
     static_configs:
       - targets: ["app:8080"]
+
+  - job_name: blackbox-ledger
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - http://app:8080/actuator/health/readiness
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115
+
+  - job_name: blackbox-console
+    metrics_path: /probe
+    params:
+      module: [http_console]
+    static_configs:
+      - targets:
+          - http://app:8080/console/
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115

@@ -1,0 +1,29 @@
+groups:
+  - name: ledger-blackbox
+    rules:
+      - alert: LedgerProbeDown
+        expr: probe_success{job="blackbox-ledger"} == 0
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: "Ledger readiness probe is failing"
+          runbook_url: "https://github.com/consultantstanleymn/payments-ledger-service/blob/main/docs/RUNBOOK.md#probe-alerts"
+
+      - alert: LedgerProbeSlow
+        expr: probe_duration_seconds{job="blackbox-ledger"} > 0.5
+        for: 10m
+        labels:
+          severity: ticket
+        annotations:
+          summary: "Ledger readiness probe is slow"
+          runbook_url: "https://github.com/consultantstanleymn/payments-ledger-service/blob/main/docs/RUNBOOK.md#probe-alerts"
+
+      - alert: ConsoleProbeDown
+        expr: probe_success{job="blackbox-console"} == 0
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: "Payments Ledger Console probe is failing"
+          runbook_url: "https://github.com/consultantstanleymn/payments-ledger-service/blob/main/docs/RUNBOOK.md#probe-alerts"

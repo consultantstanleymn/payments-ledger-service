@@ -77,6 +77,15 @@ services:
         condition: service_started
     restart: on-failure
 
+  blackbox:
+    profiles: ["obs"]
+    image: docker.io/prom/blackbox-exporter:v0.25.0
+    command: ["--config.file=/etc/blackbox_exporter/config.yml"]
+    volumes:
+      - ./observability/blackbox/blackbox.yml:/etc/blackbox_exporter/config.yml:ro,z
+    ports:
+      - "127.0.0.1:26790:9115"
+
   prometheus:
     profiles: ["obs"]
     image: docker.io/prom/prometheus:v2.55.1
