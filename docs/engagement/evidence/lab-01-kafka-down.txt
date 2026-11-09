@@ -1,0 +1,42 @@
+# Evidence: Failure lab 1: Kafka down for 2 minutes under load
+label: VERIFIED LOCALLY
+date: 2026-11-09 07:21 UTC
+code commit: 7899943935f5abb1c262cd0d31079e8129eaf4d2
+working tree clean at run time: yes
+machine: MacBook Pro (mid 2015), 8 logical CPUs, 16 GB RAM, Fedora 44, podman 5.8.7 (measured on one laptop)
+command: LAB_OUT=/tmp/lab01.txt flock heavy.lock nice -n 10 lab/01-kafka-down.sh
+notes: Redpanda is one node. The run is short (about 3 minutes, 3 virtual users). It proves the outbox holds events and the projection catches up. It does not prove multi-broker behavior. Numbers measured on one laptop.
+---
+uptime start:  02:17:15 up  2:34,  1 user,  load average: 1.10, 1.55, 1.89
+--- snapshot: before (07:17:57Z)
+outbox_unsent=36
+outbox_total=3798
+processed_events=3848
+account_posted_sum=0
+journal_txn_without_entries=0
+--- injection: stop ledger_redpanda_1 for 120 s
+API accepted a write while Kafka was down: HTTP 201
+--- snapshot: during (07:20:00Z)
+outbox_unsent=31906
+outbox_total=36020
+processed_events=4048
+account_posted_sum=0
+journal_txn_without_entries=0
+--- recovery: start ledger_redpanda_1
+k6 exit=0
+--- snapshot: after (before drain check) (07:20:33Z)
+outbox_unsent=0
+outbox_total=43870
+processed_events=43870
+account_posted_sum=0
+journal_txn_without_entries=0
+--- invariants: after recovery
+unbalanced_transactions=0 accounts_below_floor=0 cache_vs_journal_diffs=0 projection_vs_ledger_diffs=0 sum_of_all_balances=0 outbox_pending=0
+invariants exit=0
+--- snapshot: after (07:20:35Z)
+outbox_unsent=0
+outbox_total=43870
+processed_events=43870
+account_posted_sum=0
+journal_txn_without_entries=0
+uptime end:  02:20:36 up  2:37,  1 user,  load average: 3.28, 2.28, 2.11
