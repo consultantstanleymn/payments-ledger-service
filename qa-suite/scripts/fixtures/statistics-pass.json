@@ -1,0 +1,34 @@
+{
+  "Total": {
+    "sampleCount": 360,
+    "errorCount": 0,
+    "errorPct": 0.0,
+    "pct1ResTime": 150.0,
+    "pct2ResTime": 210.0,
+    "pct3ResTime": 290.0
+  },
+  "authorize": {
+    "sampleCount": 120,
+    "errorCount": 0,
+    "errorPct": 0.0,
+    "pct1ResTime": 130.0,
+    "pct2ResTime": 220.0,
+    "pct3ResTime": 280.0
+  },
+  "capture": {
+    "sampleCount": 120,
+    "errorCount": 0,
+    "errorPct": 0.0,
+    "pct1ResTime": 160.0,
+    "pct2ResTime": 250.0,
+    "pct3ResTime": 295.0
+  },
+  "get payment": {
+    "sampleCount": 120,
+    "errorCount": 0,
+    "errorPct": 0.0,
+    "pct1ResTime": 90.0,
+    "pct2ResTime": 180.0,
+    "pct3ResTime": 240.0
+  }
+}

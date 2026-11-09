@@ -185,18 +185,40 @@
             <version>${jmeter.plugin.version}</version>
             <executions>
               <execution>
-                <id>ledger-payments</id>
+                <id>configuration</id>
+                <phase>generate-test-resources</phase>
+                <goals>
+                  <goal>configure</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>jmeter-tests</id>
                 <phase>integration-test</phase>
                 <goals>
                   <goal>jmeter</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>jmeter-check</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>results</goal>
                 </goals>
               </execution>
             </executions>
             <configuration>
               <testFilesDirectory>${project.basedir}/perf</testFilesDirectory>
               <resultsDirectory>${project.build.directory}/jmeter/results</resultsDirectory>
-              <generateReports>false</generateReports>
+              <generateReports>true</generateReports>
               <ignoreResultFailures>true</ignoreResultFailures>
+              <propertiesUser>
+                <host>127.0.0.1</host>
+                <port>18080</port>
+                <duration>120</duration>
+                <threads>20</threads>
+                <ramp>30</ramp>
+                <apiKey>dev-key-local-only</apiKey>
+              </propertiesUser>
             </configuration>
           </plugin>
         </plugins>

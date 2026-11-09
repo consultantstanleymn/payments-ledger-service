@@ -72,7 +72,7 @@ echo "reports:"
 echo "  surefire:   ${qa_dir}/target/surefire-reports"
 echo "  flaky:      ${qa_dir}/target/flaky-report.md"
 echo "  jmeter:     ${qa_dir}/target/jmeter/results"
-echo "  statistics: ${qa_dir}/target/jmeter/results/statistics.json"
+echo "  statistics: ${qa_dir}/target/jmeter/reports/ledger-payments/statistics.json"
 
 if [[ "${status}" -ne 0 ]]; then
   exit "${status}"

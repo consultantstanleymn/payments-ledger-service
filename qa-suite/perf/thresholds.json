@@ -1,0 +1,8 @@
+{
+  "errorRatePct": 1.0,
+  "p95Ms": {
+    "authorize": 300,
+    "capture": 300,
+    "get payment": 300
+  }
+}
