@@ -1,0 +1,32 @@
+# Evidence: Failure lab 3: app killed with SIGKILL during a burst
+label: VERIFIED LOCALLY
+date: 2026-11-09 07:37 UTC
+code commit: 225c3b9f58babf0122acf085c363145c8e166fd2
+working tree clean at run time: yes
+machine: MacBook Pro (mid 2015), 8 logical CPUs, 16 GB RAM, Fedora 44, podman 5.8.7 (measured on one laptop)
+command: LAB_OUT=/tmp/lab.txt flock heavy.lock nice -n 10 lab/03-relay-kill.sh
+notes: k6 exit 99 is expected here: requests failed while the app was down. The invariants still pass and the projection counts each event once. Redpanda is one node, one laptop, short run, 3 virtual users. Numbers measured on one laptop.
+---
+uptime start:  02:24:59 up  2:41,  1 user,  load average: 2.74, 2.37, 2.16
+--- snapshot: before (07:25:55Z)
+outbox_unsent=26
+outbox_total=6374
+processed_events=6410
+account_posted_sum=0
+journal_txn_without_entries=0
+--- injection: SIGKILL ledger_app_1 during the burst
+app health UP again after the kill
+k6 exit=99
+--- snapshot: after (07:27:01Z)
+outbox_unsent=0
+outbox_total=18716
+processed_events=18716
+account_posted_sum=0
+journal_txn_without_entries=0
+--- invariants: after kill
+unbalanced_transactions=0 accounts_below_floor=0 cache_vs_journal_diffs=0 projection_vs_ledger_diffs=0 sum_of_all_balances=0 outbox_pending=0
+invariants exit=0
+topic ledger.events high watermark (all records, duplicates included): 18716
+processed_events (each event counted once): 18716
+outbox_events total: 18716
+uptime end:  02:27:06 up  2:43,  1 user,  load average: 3.58, 2.88, 2.38

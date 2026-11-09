@@ -1,0 +1,36 @@
+# Evidence: Failure lab 4: malformed event goes to the dead-letter topic
+label: VERIFIED LOCALLY
+date: 2026-11-09 07:37 UTC
+code commit: 225c3b9f58babf0122acf085c363145c8e166fd2
+working tree clean at run time: yes
+machine: MacBook Pro (mid 2015), 8 logical CPUs, 16 GB RAM, Fedora 44, podman 5.8.7 (measured on one laptop)
+command: LAB_OUT=/tmp/lab.txt flock heavy.lock nice -n 10 lab/04-poison-event.sh
+notes: A malformed record fails again on redrive, so it stays a manual decision. A transient failure redrive is proven in DeadLetterIT, not here. Redpanda is one node, one laptop, short run, 3 virtual users. Numbers measured on one laptop.
+---
+uptime start:  02:27:27 up  2:44,  1 user,  load average: 2.78, 2.75, 2.34
+--- snapshot: before (07:28:14Z)
+outbox_unsent=8
+outbox_total=3752
+processed_events=3790
+account_posted_sum=0
+journal_txn_without_entries=0
+--- injection: produce one malformed record to ledger.events
+k6 exit=0
+DLT high watermark after the poison event: 1
+--- invariants: after poison event
+unbalanced_transactions=0 accounts_below_floor=0 cache_vs_journal_diffs=0 projection_vs_ledger_diffs=0 sum_of_all_balances=0 outbox_pending=0
+invariants exit=0
+--- redrive: the malformed record cannot be fixed by a repeat, so it fails again
+{"republished":1,"read":1}
+DLT high watermark after redrive: 2
+Decision: a truly malformed record stays in the DLT. A person reviews it. See the runbook.
+--- invariants: after redrive
+unbalanced_transactions=0 accounts_below_floor=0 cache_vs_journal_diffs=0 projection_vs_ledger_diffs=0 sum_of_all_balances=0 outbox_pending=0
+invariants exit=0
+--- snapshot: after (07:29:16Z)
+outbox_unsent=0
+outbox_total=15386
+processed_events=15386
+account_posted_sum=0
+journal_txn_without_entries=0
+uptime end:  02:29:17 up  2:46,  1 user,  load average: 2.55, 2.75, 2.40

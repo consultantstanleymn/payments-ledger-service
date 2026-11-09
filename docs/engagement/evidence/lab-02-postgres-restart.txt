@@ -1,0 +1,31 @@
+# Evidence: Failure lab 2: Postgres restart under load
+label: VERIFIED LOCALLY
+date: 2026-11-09 07:37 UTC
+code commit: 225c3b9f58babf0122acf085c363145c8e166fd2
+working tree clean at run time: yes
+machine: MacBook Pro (mid 2015), 8 logical CPUs, 16 GB RAM, Fedora 44, podman 5.8.7 (measured on one laptop)
+command: LAB_OUT=/tmp/lab.txt flock heavy.lock nice -n 10 lab/02-postgres-restart.sh
+notes: Shows recovery and no half transaction after the restart. Redpanda is one node, one laptop, short run, 3 virtual users. Numbers measured on one laptop.
+---
+uptime start:  02:22:32 up  2:39,  1 user,  load average: 1.53, 1.98, 2.02
+--- snapshot: before (07:23:24Z)
+outbox_unsent=16
+outbox_total=5208
+processed_events=5242
+account_posted_sum=0
+journal_txn_without_entries=0
+--- injection: restart ledger_postgres_1
+app health UP again after the restart
+k6 exit=0
+k6 http_req_failed rate during the whole run (restart window included): 0.00036735443580481234
+k6 iterations: 16271
+--- snapshot: after (07:24:35Z)
+outbox_unsent=0
+outbox_total=22832
+processed_events=22832
+account_posted_sum=0
+journal_txn_without_entries=0
+--- invariants: after restart
+unbalanced_transactions=0 accounts_below_floor=0 cache_vs_journal_diffs=0 projection_vs_ledger_diffs=0 sum_of_all_balances=0 outbox_pending=0
+invariants exit=0
+uptime end:  02:24:37 up  2:41,  1 user,  load average: 3.50, 2.49, 2.19

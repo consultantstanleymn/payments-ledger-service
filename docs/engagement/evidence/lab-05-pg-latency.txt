@@ -1,0 +1,29 @@
+# Evidence: Failure lab 5: 200 ms Postgres latency through Toxiproxy
+label: VERIFIED LOCALLY
+date: 2026-11-09 07:37 UTC
+code commit: 225c3b9f58babf0122acf085c363145c8e166fd2
+working tree clean at run time: yes
+machine: MacBook Pro (mid 2015), 8 logical CPUs, 16 GB RAM, Fedora 44, podman 5.8.7 (measured on one laptop)
+command: LAB_OUT=/tmp/lab.txt flock heavy.lock nice -n 10 lab/05-pg-latency.sh
+notes: The load runs only while the toxic is active. k6 exit code 100 here comes from the k6 run summary after slow iterations. The p95 comparison is the result that counts. Redpanda is one node, one laptop, short run, 3 virtual users. Numbers measured on one laptop.
+---
+uptime start:  02:34:44 up  2:51,  1 user,  load average: 3.11, 2.77, 2.49
+--- baseline load without a toxic (30 s)
+k6 exit=0
+baseline k6 http_req_duration p(95) (ms): 36.958433
+--- injection: latency toxic 200 ms on proxy pg, load for 45 s
+k6 exit=100
+toxic k6 http_req_duration p(95) (ms): 2425.6952445
+toxic k6 http_req_failed rate: 0
+SLO latency target: 99 percent of POST /transfers under 300 ms. A p95 above 300 ms means the latency alert expression would fire.
+--- toxic removed
+--- snapshot: after (07:36:47Z)
+outbox_unsent=2
+outbox_total=7570
+processed_events=7570
+account_posted_sum=0
+journal_txn_without_entries=0
+--- invariants: after toxic removed
+unbalanced_transactions=0 accounts_below_floor=0 cache_vs_journal_diffs=0 projection_vs_ledger_diffs=0 sum_of_all_balances=0 outbox_pending=0
+invariants exit=0
+uptime end:  02:36:49 up  2:53,  1 user,  load average: 2.49, 2.81, 2.56
