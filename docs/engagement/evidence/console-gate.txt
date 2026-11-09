@@ -1,0 +1,33 @@
+Console gate. Date 2026-11-09. Base commit 0c5dabe.
+Command: (cd console && npm run lint && npx tsc --noEmit && npx vitest run && npx playwright test --grep-invert @screens --reporter=line). Label: VERIFIED LOCALLY. The CI job that runs the same steps is AUTHORED, NOT RUN.
+
+
+> payments-ledger-console@0.1.0 lint
+> eslint .
+
+
+ RUN  v4.1.12 /home/stanleysujithnelavala/projects/payments-ledger-service/console
+
+
+ Test Files  8 passed (8)
+      Tests  32 passed (32)
+   Start at  17:10:15
+   Duration  5.74s (transform 2.87s, setup 1.52s, import 8.90s, tests 6.81s, environment 13.63s)
+
+
+Running 13 tests using 2 workers
+
+[1/13] [chromium] › e2e/accounts.spec.ts:8:1 › accounts page loads more, filters, and opens an entries drawer
+[2/13] [chromium] › e2e/a11y.spec.ts:18:1 › sign-in page has no WCAG A or AA violations
+[3/13] [chromium] › e2e/a11y.spec.ts:23:1 › accounts page has no WCAG A or AA violations
+[4/13] [chromium] › e2e/keyboard.spec.ts:8:1 › keyboard only: sign in, open drawer, close with Escape, open and cancel redrive dialog
+[5/13] [chromium] › e2e/operations.spec.ts:13:1 › redrive dialog can be cancelled
+[6/13] [chromium] › e2e/a11y.spec.ts:28:1 › accounts drawer has no WCAG A or AA violations
+[7/13] [chromium] › e2e/operations.spec.ts:25:1 › redrive dialog can be confirmed
+[8/13] [chromium] › e2e/payments.spec.ts:8:1 › payments page filters by status and looks up an external reference
+[9/13] [chromium] › e2e/signin.spec.ts:8:1 › bad API key shows an alert
+[10/13] [chromium] › e2e/a11y.spec.ts:35:1 › payments page has no WCAG A or AA violations
+[11/13] [chromium] › e2e/signin.spec.ts:16:1 › valid API key lands on the accounts page
+[12/13] [chromium] › e2e/a11y.spec.ts:42:1 › operations page has no WCAG A or AA violations
+[13/13] [chromium] › e2e/a11y.spec.ts:49:1 › operations redrive dialog has no WCAG A or AA violations
+  13 passed (16.1s)
