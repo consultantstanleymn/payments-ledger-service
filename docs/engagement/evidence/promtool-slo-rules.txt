@@ -1,0 +1,15 @@
+# Evidence: promtool tests of the SLO alert rules
+label: VERIFIED LOCALLY
+date: 2026-11-09 06:43 UTC
+code commit: b62a4a837940b48be4fd966e3d49ca1fb4175aa6
+working tree clean at run time: yes
+machine: MacBook Pro (mid 2015), 8 logical CPUs, 16 GB RAM, Fedora 44, podman 5.8.7 (measured on one laptop)
+command: podman run --rm -v "$PWD/observability/rules:/r:ro,z" --entrypoint promtool docker.io/prom/prometheus:v2.55.1 test rules /r/slo.rules.test.yml
+notes: promtool really ran. Series are synthetic. This proves the rule logic, not live traffic.
+---
+Checking /r/slo.rules.yml
+  SUCCESS: 18 rules found
+
+  SUCCESS
+
+alert test cases: 12
