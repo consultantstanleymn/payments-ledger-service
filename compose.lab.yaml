@@ -1,0 +1,11 @@
+# Lab override: the app reaches Postgres through Toxiproxy, so the lab can add latency.
+# Use with: podman-compose -f compose.yaml -f compose.lab.yaml --profile lab up -d
+services:
+  app:
+    environment:
+      DB_URL: jdbc:postgresql://toxiproxy:25375/ledger
+      # Lab-only admin key so the redrive endpoint can be called. Not a real secret.
+      LEDGER_ADMIN_KEY: lab-admin-local-only
+    depends_on:
+      toxiproxy:
+        condition: service_started
