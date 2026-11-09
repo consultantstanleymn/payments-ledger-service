@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Payment",
+  "description": "Response body for authorize, capture, refund, void and read routes.",
+  "type": "object",
+  "required": [
+    "id",
+    "payerId",
+    "payeeId",
+    "currency",
+    "authorizedMinor",
+    "capturedMinor",
+    "refundedMinor",
+    "status"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "payerId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "payeeId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "authorizedMinor": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "capturedMinor": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "refundedMinor": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "externalRef": {
+      "type": ["string", "null"],
+      "maxLength": 64
+    },
+    "status": {
+      "type": "string",
+      "enum": ["AUTHORIZED", "CAPTURED", "VOIDED"]
+    }
+  },
+  "additionalProperties": false
+}

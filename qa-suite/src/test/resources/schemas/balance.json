@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Balance",
+  "description": "Response body for the account balance route.",
+  "type": "object",
+  "required": [
+    "accountId",
+    "currency",
+    "floorMinor",
+    "postedMinor",
+    "heldMinor",
+    "availableMinor"
+  ],
+  "properties": {
+    "accountId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "floorMinor": {
+      "type": "integer"
+    },
+    "postedMinor": {
+      "type": "integer"
+    },
+    "heldMinor": {
+      "type": "integer"
+    },
+    "availableMinor": {
+      "type": "integer"
+    }
+  },
+  "additionalProperties": false
+}
