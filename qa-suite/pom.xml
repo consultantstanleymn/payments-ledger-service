@@ -131,6 +131,7 @@
               <excludes>
                 <exclude>**/ui/**</exclude>
               </excludes>
+              <rerunFailingTestsCount>1</rerunFailingTestsCount>
               <systemPropertyVariables>
                 <cucumber.filter.tags>${cucumber.filter.tags}</cucumber.filter.tags>
               </systemPropertyVariables>
@@ -156,6 +157,7 @@
                 <include>**/ui/**/*Test.java</include>
                 <include>**/bdd/RunCucumberTest.java</include>
               </includes>
+              <rerunFailingTestsCount>1</rerunFailingTestsCount>
               <systemPropertyVariables>
                 <cucumber.filter.tags>${cucumber.filter.tags}</cucumber.filter.tags>
               </systemPropertyVariables>

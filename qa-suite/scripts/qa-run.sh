@@ -49,16 +49,23 @@ run_profile() {
   fi
 }
 
+status=0
 case "${mode}" in
-  api) run_profile api ;;
-  ui) run_profile ui ;;
-  perf) run_profile perf ;;
+  api) run_profile api || status=1 ;;
+  ui) run_profile ui || status=1 ;;
+  perf) run_profile perf || status=1 ;;
   all)
-    run_profile api
-    run_profile ui
-    run_profile perf
+    run_profile api || status=1
+    run_profile ui || status=1
+    run_profile perf || status=1
     ;;
 esac
+
+if [[ "${mode}" != "perf" ]]; then
+  python3 "${script_dir}/flaky_report.py" \
+    --reports "${qa_dir}/target/surefire-reports" \
+    --output "${qa_dir}/target/flaky-report.md" || status=1
+fi
 
 echo
 echo "reports:"
@@ -66,3 +73,7 @@ echo "  surefire:   ${qa_dir}/target/surefire-reports"
 echo "  flaky:      ${qa_dir}/target/flaky-report.md"
 echo "  jmeter:     ${qa_dir}/target/jmeter/results"
 echo "  statistics: ${qa_dir}/target/jmeter/results/statistics.json"
+
+if [[ "${status}" -ne 0 ]]; then
+  exit "${status}"
+fi

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.stanley.ledger.qa.api.PaymentsApiTest" tests="2" errors="0" skipped="0" failures="0" flakes="1" time="1.316">
+  <testcase name="authorizeCaptureRefundLifecycle" classname="com.stanley.ledger.qa.api.PaymentsApiTest" time="1.204">
+    <flakyFailure message="expected HTTP 200 but got 503: service starting" type="java.lang.AssertionError">
+      <stackTrace>java.lang.AssertionError: expected HTTP 200 but got 503: service starting
+	at com.stanley.ledger.qa.api.PaymentsApiTest.authorizeCaptureRefundLifecycle(PaymentsApiTest.java:42)</stackTrace>
+    </flakyFailure>
+  </testcase>
+  <testcase name="transferMovesPostedBalance" classname="com.stanley.ledger.qa.api.PaymentsApiTest" time="0.112"/>
+</testsuite>
