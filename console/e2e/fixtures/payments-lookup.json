@@ -1,0 +1,11 @@
+{
+  "id": "pay-1",
+  "externalRef": "ref-authorized",
+  "status": "AUTHORIZED",
+  "currency": "USD",
+  "amountMinor": 10000,
+  "authorizedMinor": 10000,
+  "capturedMinor": 0,
+  "refundedMinor": 0,
+  "createdAt": "2025-01-01T09:00:00Z"
+}

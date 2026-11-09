@@ -1,0 +1,8 @@
+{
+  "id": "recon-1",
+  "matched": 10,
+  "missing": 2,
+  "mismatched": 1,
+  "unexpected": 0,
+  "details": "[{\"account\":\"Alpha Holdings\",\"break\":\"missing\"}]"
+}

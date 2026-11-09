@@ -1,0 +1,38 @@
+{
+  "items": [
+    {
+      "id": "pay-1",
+      "externalRef": "ref-authorized",
+      "status": "AUTHORIZED",
+      "currency": "USD",
+      "amountMinor": 10000,
+      "authorizedMinor": 10000,
+      "capturedMinor": 0,
+      "refundedMinor": 0,
+      "createdAt": "2025-01-01T09:00:00Z"
+    },
+    {
+      "id": "pay-2",
+      "externalRef": "ref-captured",
+      "status": "CAPTURED",
+      "currency": "USD",
+      "amountMinor": 10000,
+      "authorizedMinor": 10000,
+      "capturedMinor": 10000,
+      "refundedMinor": 0,
+      "createdAt": "2025-01-02T09:00:00Z"
+    },
+    {
+      "id": "pay-3",
+      "externalRef": "ref-voided",
+      "status": "VOIDED",
+      "currency": "USD",
+      "amountMinor": 3000,
+      "authorizedMinor": 3000,
+      "capturedMinor": 0,
+      "refundedMinor": 0,
+      "createdAt": "2025-01-03T09:00:00Z"
+    }
+  ],
+  "nextCursor": null
+}

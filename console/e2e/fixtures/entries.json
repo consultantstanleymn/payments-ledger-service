@@ -1,0 +1,21 @@
+{
+  "items": [
+    {
+      "entryId": "entry-1",
+      "txnId": "txn-1",
+      "kind": "POST",
+      "reference": "ref-entry-1",
+      "amountMinor": 10000,
+      "createdAt": "2025-01-01T09:05:00Z"
+    },
+    {
+      "entryId": "entry-2",
+      "txnId": "txn-2",
+      "kind": "HOLD",
+      "reference": "ref-entry-2",
+      "amountMinor": -2000,
+      "createdAt": "2025-01-01T09:10:00Z"
+    }
+  ],
+  "nextCursor": null
+}

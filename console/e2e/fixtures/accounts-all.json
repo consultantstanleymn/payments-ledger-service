@@ -1,0 +1,32 @@
+[
+  {
+    "id": "acc-1",
+    "name": "Alpha Holdings",
+    "currency": "USD",
+    "postedMinor": 10000,
+    "heldMinor": 2000,
+    "availableMinor": 8000,
+    "floorMinor": 0,
+    "createdAt": "2025-01-01T09:00:00Z"
+  },
+  {
+    "id": "acc-2",
+    "name": "Beta Payments",
+    "currency": "EUR",
+    "postedMinor": 50000,
+    "heldMinor": 5000,
+    "availableMinor": 45000,
+    "floorMinor": 1000,
+    "createdAt": "2025-01-02T09:00:00Z"
+  },
+  {
+    "id": "acc-3",
+    "name": "Alpha Operations",
+    "currency": "USD",
+    "postedMinor": 20000,
+    "heldMinor": 0,
+    "availableMinor": 20000,
+    "floorMinor": 0,
+    "createdAt": "2025-01-03T09:00:00Z"
+  }
+]
