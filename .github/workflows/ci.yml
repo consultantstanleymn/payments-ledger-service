@@ -48,7 +48,7 @@ jobs:
       - run: mkdir -p .data/otel && docker compose up -d --build
       - name: wait for the app
         run: |
-          for i in $(seq 1 60); do curl -fs http://127.0.0.1:18080/actuator/health && exit 0; sleep 3; done
+          for _ in $(seq 1 60); do curl -fs http://127.0.0.1:18080/actuator/health && exit 0; sleep 3; done
           docker compose logs app | tail -50
           exit 1
       - run: scripts/trace-check.sh
@@ -71,14 +71,32 @@ jobs:
       - run: mkdir -p .data/otel && docker compose up -d --build
       - name: wait for the app
         run: |
-          for i in $(seq 1 60); do curl -fs http://127.0.0.1:18080/actuator/health && exit 0; sleep 3; done
+          for _ in $(seq 1 60); do curl -fs http://127.0.0.1:18080/actuator/health && exit 0; sleep 3; done
           exit 1
-      - run: k6 run -e VUS=5 -e DURATION=30s load/ledger.js
+      - name: k6 with SLO thresholds (p95 under 300 ms on transfers; a breach exits with 99)
+        run: k6 run -e VUS=5 -e DURATION=30s load/ledger.js
+      - name: Record the image digest
+        run: |
+          docker image inspect --format '{{index .RepoDigests 0}}' payments-ledger-service:local > image-digest.txt 2>/dev/null \
+            || docker image inspect --format '{{.Id}}' payments-ledger-service:local > image-digest.txt
+          cat image-digest.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: image-digest
+          path: image-digest.txt
       - name: SQL invariants
         env:
           CONTAINER_CLI: docker
           CONTAINER: ledger-postgres-1
         run: scripts/invariants.sh
+
+  promtool:
+    name: "promtool (SLO alert rules)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker run --rm -v "$PWD/observability/rules:/r:ro" --entrypoint promtool docker.io/prom/prometheus:v2.55.1 check rules /r/slo.rules.yml
+      - run: docker run --rm -v "$PWD/observability/rules:/r:ro" --entrypoint promtool docker.io/prom/prometheus:v2.55.1 test rules /r/slo.rules.test.yml
 
   openapi-lint:
     name: "openapi-lint (Spectral)"

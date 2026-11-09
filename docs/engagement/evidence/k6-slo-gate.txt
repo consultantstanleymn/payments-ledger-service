@@ -1,0 +1,38 @@
+# Evidence: k6 SLO gate: passes normally, fails with exit 99 under injected latency
+label: VERIFIED LOCALLY
+date: 2026-11-09 07:55 UTC
+code commit: 6d8762dbf50e679f8c6f77ae0f78d79580e4ed29
+working tree clean at run time: yes
+machine: MacBook Pro (mid 2015), 8 logical CPUs, 16 GB RAM, Fedora 44, podman 5.8.7 (measured on one laptop)
+command: k6 run -e VUS=5 -e DURATION=30s load/ledger.js (once on the normal stack, once with a 400 ms latency toxic on the Postgres proxy from compose.lab.yaml)
+notes: Proves the thresholds can fail a run. Numbers measured on one laptop. Thresholds use abortOnFail false so the run completes.
+---
+=== normal run: k6 run -e VUS=5 -e DURATION=30s load/ledger.js
+mixed ✓ [ 100% ] 5 VUs  30s
+    http_req_duration{name:transfer}
+    ✓ 'p(95)<300' p(95)=64.34ms
+    ✓ 'rate<0.001' rate=0.00%
+      ✓ 'rate<0.005' rate=0.00%
+    ✓ 'count==0' count=0
+    ✓ balance 200
+    ✓ transfer 201
+    http_req_duration..............: avg=24.31ms min=811.78µs med=22.34ms max=132.94ms p(90)=49.54ms p(95)=59.53ms
+    http_req_failed................: 0.00%  0 out of 6155
+    iterations.....................: 6093   196.652164/s
+normal run exit code: 0
+=== forced slow run: 400 ms latency toxic on the Postgres proxy
+mixed ✓ [ 100% ] 5 VUs  30s
+mixed ✓ [ 100% ] 5 VUs  30s
+mixed ✓ [ 100% ] 5 VUs  30s
+mixed ✓ [ 100% ] 5 VUs  30s
+mixed ✓ [ 100% ] 5 VUs  30s
+mixed ✓ [ 100% ] 5 VUs  30s
+mixed ✓ [ 100% ] 5 VUs  30s
+mixed ✓ [ 100% ] 5 VUs  30s
+mixed ✓ [ 100% ] 5 VUs  30s
+mixed ✓ [ 100% ] 5 VUs  30s
+mixed ✓ [ 100% ] 5 VUs  30s
+mixed ✓ [ 100% ] 5 VUs  30s
+mixed ✓ [ 100% ] 5 VUs  30s
+mixed ✓ [ 100% ] 5 VUs  30s
+forced slow run exit code: 99
