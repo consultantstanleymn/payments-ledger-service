@@ -8,6 +8,8 @@ mvn="${root_dir}/mvnw"
 
 with_stack=false
 mode="api"
+selenium_started=false
+selenium_image="docker.io/selenium/standalone-chromium:4.52.0-20261101"
 
 usage() {
   echo "usage: qa-run.sh [api|ui|perf|all] [--with-stack]"
@@ -30,14 +32,17 @@ for arg in "$@"; do
 done
 
 cleanup() {
+  if [[ "${selenium_started}" == "true" ]]; then
+    podman rm -f ledger-qa-selenium >/dev/null 2>&1 || true
+  fi
   if [[ "${with_stack}" == "true" ]]; then
     ( cd "${root_dir}" && podman-compose down )
   fi
 }
+trap cleanup EXIT
 
 if [[ "${with_stack}" == "true" ]]; then
   ( cd "${root_dir}" && podman-compose up -d --build )
-  trap cleanup EXIT
 fi
 
 run_profile() {
@@ -49,14 +54,66 @@ run_profile() {
   fi
 }
 
+wait_for_selenium() {
+  local base="$1"
+  local status_url="${base%/}/status"
+  local attempt=0
+  until curl -fsS "${status_url}" | grep -Eq '"ready"[[:space:]]*:[[:space:]]*true'; do
+    attempt=$((attempt + 1))
+    if [[ "${attempt}" -ge 60 ]]; then
+      echo "selenium did not become ready at ${status_url}" >&2
+      return 1
+    fi
+    sleep 1
+  done
+}
+
+start_selenium() {
+  local base="${SELENIUM_URL:-http://127.0.0.1:26744}"
+  base="${base%/}"
+  podman rm -f ledger-qa-selenium >/dev/null 2>&1 || true
+  podman run --pull=never -d --name ledger-qa-selenium --network host --shm-size 1g \
+    -e SE_OPTS="--port 26744" \
+    -e SE_START_VNC=false \
+    "${selenium_image}" >/dev/null
+  selenium_started=true
+  echo "waiting for selenium at ${base}/status"
+  if ! wait_for_selenium "${base}"; then
+    stop_selenium
+    return 1
+  fi
+}
+
+stop_selenium() {
+  if [[ "${selenium_started}" == "true" ]]; then
+    podman rm -f ledger-qa-selenium >/dev/null 2>&1 || true
+    selenium_started=false
+  fi
+}
+
+run_profile_ui() {
+  if ! start_selenium; then
+    return 1
+  fi
+
+  local rc=0
+  run_profile ui || rc=$?
+  if [[ "${rc}" -ne 0 ]]; then
+    stop_selenium
+    return "${rc}"
+  fi
+
+  stop_selenium
+}
+
 status=0
 case "${mode}" in
   api) run_profile api || status=1 ;;
-  ui) run_profile ui || status=1 ;;
+  ui) run_profile_ui || status=1 ;;
   perf) run_profile perf || status=1 ;;
   all)
     run_profile api || status=1
-    run_profile ui || status=1
+    run_profile_ui || status=1
     run_profile perf || status=1
     ;;
 esac
