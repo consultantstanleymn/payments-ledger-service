@@ -4,3 +4,4 @@ target/
 *.iml
 .vscode/
 otel/opentelemetry-javaagent.jar
+qa-suite/target/
