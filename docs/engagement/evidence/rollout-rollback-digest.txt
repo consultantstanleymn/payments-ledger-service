@@ -5,7 +5,7 @@ code commit: ff48cefeea093dacecbbf929d0d126cb889db82f
 working tree clean at run time: yes
 machine: MacBook Pro (mid 2015), 8 logical CPUs, 16 GB RAM, Fedora 44, podman 5.8.7 (measured on one laptop)
 command: flock heavy.lock nice -n 10 scripts/rollout.sh
-notes: Both images were run by digest. Rollback to the old image worked with V2 and V3 applied. The old image needs the Flyway ignore-future setting (set by environment variable). Not a production deploy. Numbers measured on one laptop.
+notes: Both images were run by digest. Rollback to the old image worked with V2 and V3 applied. The old image needs the Flyway ignore-future setting (set by environment variable). Not a production deploy. Numbers measured on one laptop. Review note (added later): the run started before scripts/rollout.sh was committed, so step 2 prints HEAD 5a28467 and the tree held the uncommitted script. Commit ff48cef adds only scripts/rollout.sh and docs/engagement/ROLLOUT.md, so the application code in both images matches the code commit above.
 ---
 uptime start:  02:42:08 up  2:58,  1 user,  load average: 4.31, 3.53, 2.91
 === 1. build v1 from 30ffa1556bab3b07742ad7edeab1dc2d7bb0a122 (before V2 and V3)

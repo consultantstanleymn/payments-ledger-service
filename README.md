@@ -25,6 +25,7 @@ All rows ran on one laptop. Numbers are measured on one laptop.
 | Rollback by image digest across an expand and contract migration | `scripts/rollout.sh` | `docs/engagement/evidence/rollout-rollback-digest.txt` | 2026-11-09 |
 | k6 SLO gate exits 99 on a forced slow run | `k6 run load/ledger.js` | `docs/engagement/evidence/k6-slo-gate.txt` | 2026-11-09 |
 | Append-only caller audit log | `./mvnw -B verify -Dit.test=CallerAuditIT` | `src/test/java/com/stanley/ledger/CallerAuditIT.java` | 2026-11-09 |
+| Compose files pass `podman compose config` and `docker compose config` | see the file | `docs/engagement/evidence/compose-config.txt` | 2026-11-09 |
 | Security scans: gitleaks, semgrep, trivy (source and image) | see `docs/engagement/SECURITY-GATE.md` | `docs/engagement/evidence/security-gate-local.txt` | 2026-11-09 |
 
 ## Authored, not run
@@ -33,7 +34,8 @@ All rows ran on one laptop. Numbers are measured on one laptop.
 |---|---|---|
 | `.github/workflows/ci.yml` (digest artifact, promtool job, SLO thresholds) | Run the new checks on GitHub | Authored, not run: this file is written and syntax-checked with `actionlint 1.7.12`. It was not executed against GitHub Actions. Reason: needs GitHub Actions. |
 | `.github/workflows/security.yml` | Run the five security jobs | Authored, not run: this file is written and syntax-checked with `actionlint 1.7.12`. It was not executed against GitHub Actions. Reason: needs GitHub Actions. |
-| `docker compose` check of the new profiles | Validate with the Docker plugin | The Docker compose plugin is not installed here. Only `podman compose config` ran. |
+| Multi-broker Kafka behavior | Replication, broker loss and leader moves | Not run. The local stack has one Redpanda node. |
+| Managed stream services (MSK, Kinesis) | The options in `docs/engagement/adr/0003-streaming-choice.md` | Not run. Decision level only, no cloud account by design. |
 
 ## Architecture
 
@@ -107,7 +109,7 @@ More: [docs/ONBOARDING.md](docs/ONBOARDING.md), [docs/RUNBOOK.md](docs/RUNBOOK.m
 | Projection equals ledger after a random workload | `KafkaFlowIT` | pass |
 | Reconciliation: 98 matched, 1 missing, 1 mismatched | `ReconciliationIT` | pass |
 | One trace holds HTTP server, JDBC, Kafka producer and Kafka consumer spans | `scripts/trace-check.sh` | pass on the local stack |
-| Load: 20 VUs, 2 minutes, error rate below 0.1 percent, zero invariant violations | `load/ledger.js` | 282 requests/s, p95 145 ms, 0.00 percent errors, 0 violations |
+| Load: 20 VUs, 2 minutes, error rate below 0.1 percent, zero invariant violations | `load/ledger.js` | 282 requests/s, p95 145 ms, 0.00 percent errors, 0 violations (measured on one laptop) |
 | OpenAPI file lists every route of the controller | `OpenApiSpecTest` | pass |
 
 Test totals: 4 unit and property tests, 11 integration tests, 0 failures.
@@ -123,7 +125,7 @@ Not verified yet. These run only in GitHub Actions, which has not run for this r
 - the `openapi-lint` job (Spectral). Locally, only a YAML parse and a route-coverage test ran;
 - Temurin 25 on the runner (local runs use the Red Hat build of OpenJDK 25).
 
-A skill goes on a resume only after its job is green on `main`.
+A skill goes on a resume only when its local proof command and evidence file exist.
 
 ## What this is not
 
@@ -135,7 +137,7 @@ A skill goes on a resume only after its job is green on `main`.
 - Not deployed to any cloud.
 - One Maven module with packages, not several modules.
 - JDBC with explicit SQL through `JdbcClient`. It does not use Spring Data JDBC repositories.
-- Holds do not expire. Idempotency keys do not expire. There is no dead-letter topic.
+- Holds do not expire. Idempotency keys do not expire. A malformed record stays on the dead-letter topic until a person reviews it.
 - Reconciliation compares captured amounts. It does not net refunds.
 - The Postgres in compose uses default durable settings. The numbers in PERF.md come from them.
 
