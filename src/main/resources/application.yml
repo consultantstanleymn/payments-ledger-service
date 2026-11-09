@@ -34,6 +34,8 @@ management:
         http.server.requests: 300ms
         ledger.projection.lag: 1s,5s,30s
 ledger:
+  # Empty by default: admin routes answer 403. Set LEDGER_ADMIN_KEY to enable them.
+  admin-key: ${LEDGER_ADMIN_KEY:}
   # Local development key only. Real deployments set LEDGER_API_KEYS_<key>. See SECURITY.md.
   api-keys:
     dev-key-local-only: dev

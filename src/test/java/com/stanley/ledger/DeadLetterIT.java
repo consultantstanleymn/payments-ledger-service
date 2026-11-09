@@ -17,6 +17,12 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
 
 class DeadLetterIT extends IntegrationBase {
+  @org.springframework.beans.factory.annotation.Autowired
+  com.stanley.ledger.projection.ProjectionConsumer consumer;
+
+  @org.springframework.beans.factory.annotation.Autowired
+  com.stanley.ledger.projection.DltRedriver redriver;
+
   static final String TOPIC = "ledger.events";
   static final String DLT = "ledger.events.DLT";
 
@@ -73,6 +79,20 @@ class DeadLetterIT extends IntegrationBase {
     assertThat(processed()).isEqualTo(expected);
   }
 
+  void awaitEvent(UUID id) throws InterruptedException {
+    long deadline = System.currentTimeMillis() + 60_000;
+    while (System.currentTimeMillis() < deadline) {
+      long n =
+          jdbc.sql("SELECT count(*) FROM processed_events WHERE event_id = :id")
+              .param("id", id)
+              .query(Long.class)
+              .single();
+      if (n > 0) return;
+      Thread.sleep(300);
+    }
+    throw new AssertionError("event was not applied: " + id);
+  }
+
   @Test
   void poisonEventGoesToDltAndOthersApply() throws Exception {
     String marker = "poison-" + UUID.randomUUID();
@@ -94,5 +114,41 @@ class DeadLetterIT extends IntegrationBase {
     var headers = records.get(0).headers();
     assertThat(headers.lastHeader("kafka_dlt-exception-fqcn")).isNotNull();
     assertThat(headers.lastHeader("kafka_dlt-original-topic")).isNotNull();
+  }
+
+  @Test
+  void redriveAppliesFixedEventOnce() throws Exception {
+    UUID id = UUID.randomUUID();
+    consumer.failFor(id);
+    produce("redrive-key", goodEvent(id, UUID.randomUUID()));
+    assertThat(dltRecordsWith(id.toString())).hasSize(1);
+    assertThat(processed()).isZero();
+    consumer.clearFailures();
+    var result = redriver.redrive(1000, true);
+    assertThat(result.republished()).isPositive();
+    awaitEvent(id);
+  }
+
+  @Test
+  void redriveTwiceDoesNotDoubleApply() throws Exception {
+    UUID id = UUID.randomUUID();
+    consumer.failFor(id);
+    produce("redrive-key-2", goodEvent(id, UUID.randomUUID()));
+    assertThat(dltRecordsWith(id.toString())).hasSize(1);
+    consumer.clearFailures();
+    redriver.redrive(1000, true);
+    awaitEvent(id);
+    redriver.redrive(1000, true);
+    Thread.sleep(3000);
+    assertThat(
+            jdbc.sql("SELECT count(*) FROM processed_events WHERE event_id = :id")
+                .param("id", id)
+                .query(Long.class)
+                .single())
+        .isEqualTo(1);
+    // Two full replays still leave exactly one projection step for this account.
+    assertThat(
+            jdbc.sql("SELECT max(event_count) FROM balance_projection").query(Long.class).single())
+        .isEqualTo(1);
   }
 }

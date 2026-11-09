@@ -37,6 +37,17 @@ public class ProjectionConsumer {
   private final JsonMapper json;
   private final Timer lag;
 
+  /** Test hook: events with these ids fail each time, as if a dependency was down. */
+  private final java.util.Set<UUID> failing = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+  public void failFor(UUID eventId) {
+    failing.add(eventId);
+  }
+
+  public void clearFailures() {
+    failing.clear();
+  }
+
   public ProjectionConsumer(
       JdbcClient jdbc, TransactionTemplate tx, JsonMapper json, MeterRegistry registry) {
     this.lag = Timer.builder("ledger.projection.lag").register(registry);
@@ -153,6 +164,9 @@ public class ProjectionConsumer {
       held = n.get("heldDelta").asLong();
     } catch (RuntimeException e) {
       throw new PoisonEventException("event payload is malformed", e);
+    }
+    if (failing.contains(eventId)) {
+      throw new PoisonEventException("simulated transient failure", null);
     }
     int fresh =
         jdbc.sql("INSERT INTO processed_events (event_id) VALUES (:e) ON CONFLICT DO NOTHING")
