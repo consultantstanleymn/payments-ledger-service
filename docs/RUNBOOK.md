@@ -76,3 +76,25 @@ Events older than the topic retention are gone, so a rebuild only works while th
 Send a CSV with the header `payment_id,amount_minor` to `POST /reconciliations` (`Content-Type: text/csv`, new Idempotency-Key).
 Read the result at `GET /reconciliations/latest`. The report counts `matched`, `missing`, `mismatched` and `unexpected`
 and lists the payment ids. Optional schedule: set `ledger.recon.settlement-file` and `ledger.recon.cron`.
+
+## Probe alerts
+
+The blackbox exporter probes the API and the console. Three alert rules cover the probes.
+
+**LedgerProbeDown**
+1. The blackbox module `http_2xx` probes `GET /actuator/health`.
+2. Check `curl -fs http://127.0.0.1:18080/actuator/health`.
+3. Check `podman-compose ps` and `podman logs ledger_app_1`.
+4. If the app is down, start it with `podman-compose up -d --build`.
+
+**LedgerProbeSlow**
+1. The blackbox probe latency is above the rule threshold.
+2. Check `curl http://127.0.0.1:18080/actuator/prometheus | grep http_server_requests_seconds`.
+3. Check recent load, Postgres slow queries and Redpanda queue depth.
+4. Reduce load or investigate the slowest path before it becomes an availability problem.
+
+**ConsoleProbeDown**
+1. The blackbox module `http_console` probes `/console/`.
+2. Check `curl -fs http://127.0.0.1:18080/console/`.
+3. If the jar was built without the console, run `npm --prefix console run build` and rebuild the jar.
+4. Check the app log and `ConsoleHeadersFilter` security header responses.

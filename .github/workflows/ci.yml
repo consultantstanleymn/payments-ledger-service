@@ -97,6 +97,8 @@ jobs:
       - uses: actions/checkout@v4
       - run: docker run --rm -v "$PWD/observability/rules:/r:ro" --entrypoint promtool docker.io/prom/prometheus:v2.55.1 check rules /r/slo.rules.yml
       - run: docker run --rm -v "$PWD/observability/rules:/r:ro" --entrypoint promtool docker.io/prom/prometheus:v2.55.1 test rules /r/slo.rules.test.yml
+      - run: docker run --rm -v "$PWD/observability/rules:/r:ro" --entrypoint promtool docker.io/prom/prometheus:v2.55.1 check rules /r/blackbox.rules.yml
+      - run: docker run --rm -v "$PWD/observability/rules:/r:ro" --entrypoint promtool docker.io/prom/prometheus:v2.55.1 test rules /r/blackbox.rules.test.yml
 
   openapi-lint:
     name: "openapi-lint (Spectral)"
@@ -107,3 +109,35 @@ jobs:
         with:
           node-version: '22'
       - run: npx --yes @stoplight/spectral-cli@6.14.2 lint src/main/resources/static/openapi.yaml --fail-severity=warn
+
+  console:
+    name: "console (lint, typecheck, Vitest, build, Playwright)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        working-directory: console
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+        run: npm ci
+      - name: Lint
+        working-directory: console
+        run: npm run lint
+      - name: Typecheck
+        working-directory: console
+        run: npx tsc --noEmit
+      - name: Unit tests
+        working-directory: console
+        run: npx vitest run
+      - name: Build
+        working-directory: console
+        run: npm run build
+      - name: Install Playwright Chromium
+        working-directory: console
+        run: npx playwright install --with-deps chromium
+      - name: Playwright tests
+        working-directory: console
+        run: npx playwright test --grep-invert @screens

@@ -7,7 +7,8 @@ A relay publishes the outbox to Kafka. A consumer builds a balance read model.
 A reconciliation job compares the ledger with a mock processor settlement file.
 
 Stack: Java 25, Spring Boot 4.1.2, PostgreSQL 16, Flyway, Spring Kafka (Redpanda, Kafka API),
-OpenTelemetry (Java agent, Collector, Jaeger), JUnit 5, jqwik, Testcontainers, k6.
+OpenTelemetry (Java agent, Collector, Jaeger), JUnit 5, jqwik, Testcontainers, k6,
+React 19, TypeScript, Sass, Playwright.
 
 Status: all checks below ran on one laptop. The GitHub Actions workflows exist but have not run yet.
 See "Verified and not verified".
@@ -65,11 +66,31 @@ Trace of one capture request, from the HTTP call through JDBC and Kafka to the c
 
 ![Jaeger trace](docs/img/jaeger-trace.png)
 
+## Ops console
+
+The service includes a read-mostly operations console at `/console/` for support and finance operators.
+It lists accounts and balances, shows journal entries for an account, finds payments by status or external reference,
+shows the latest reconciliation report, and lets an admin redrive the dead-letter topic behind a confirm dialog.
+
+The console is a React 19, TypeScript and Sass single-page app built with Vite. Routes use `HashRouter`,
+so Spring Boot needs no SPA fallback route. The production build is written to `src/main/resources/static/console`,
+which is git-ignored. Run `npm --prefix console run build` before `./mvnw package` to include the console in the jar.
+
+The console sends the API key the operator types and keeps it in `sessionStorage`. It never stores the admin key.
+The `/ops/*` read-only endpoints use one keyset paging contract. The console is covered by Playwright tests
+and axe-core WCAG 2.1 A and AA checks.
+
+![Ops console accounts page](docs/img/console-accounts-light.png)
+
 ## Run it
 
 You need Java 25 (JDK), Maven, podman, podman-compose and k6.
 
 ```bash
+# console dependencies and production build in the jar
+npm --prefix console ci
+npm --prefix console run build
+
 # unit, property tests, Spotless check (no containers)
 ./mvnw -B verify -DskipITs
 
@@ -87,6 +108,18 @@ scripts/demo.sh            # one payment from start to finish
 scripts/trace-check.sh     # one trace must hold HTTP, JDBC, Kafka producer and consumer spans
 k6 run load/ledger.js      # 20 VUs, 2 minutes
 scripts/invariants.sh      # SQL invariants after the run
+
+# console dev server on 127.0.0.1:26710, proxying /ops and the API to 127.0.0.1:18080
+npm --prefix console run dev
+
+# console checks before commit
+(cd console && npm run lint && npx tsc --noEmit && npx vitest run)
+(cd console && npx playwright test --grep-invert @screens --reporter=line)
+
+# blackbox probes when compose profile obs is enabled
+podman-compose --profile obs up -d --build
+curl 'http://127.0.0.1:26790/probe?target=http://127.0.0.1:18080/actuator/health&module=http_2xx'
+curl 'http://127.0.0.1:26790/probe?target=http://127.0.0.1:18080/console/&module=http_console'
 ```
 
 Jaeger UI: http://127.0.0.1:18686. OpenAPI file: http://127.0.0.1:18080/openapi.yaml.
