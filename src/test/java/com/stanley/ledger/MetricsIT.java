@@ -57,5 +57,9 @@ class MetricsIT extends IntegrationBase {
     assertThat(metrics).contains("ledger_projection_lag_seconds_bucket");
     assertThat(metrics).contains("http_server_requests_seconds_bucket{");
     assertThat(metrics).contains("uri=\"/transfers\"");
+    assertThat(metrics).containsPattern("http_server_requests_seconds_bucket\\{[^}]*le=\"0\\.3\"");
+    assertThat(metrics).containsPattern("ledger_projection_lag_seconds_bucket\\{[^}]*le=\"5\\.0\"");
+    assertThat(metrics).containsPattern("http_server_requests_seconds_bucket\\{[^}]*le=\"0\\.3\"");
+    assertThat(metrics).containsPattern("ledger_projection_lag_seconds_bucket\\{[^}]*le=\"5\\.0\"");
   }
 }

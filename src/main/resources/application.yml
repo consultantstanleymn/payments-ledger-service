@@ -30,6 +30,8 @@ management:
         http.server.requests: true
         ledger.projection.lag: true
       slo:
+        # The 300 ms bucket must exist, so the latency SLI query (le="0.3") has data.
+        http.server.requests: 300ms
         ledger.projection.lag: 1s,5s,30s
 ledger:
   # Local development key only. Real deployments set LEDGER_API_KEYS_<key>. See SECURITY.md.
