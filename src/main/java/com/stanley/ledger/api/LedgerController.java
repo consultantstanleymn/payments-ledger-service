@@ -114,10 +114,15 @@ public class LedgerController {
               ledger.authorize(
                   uuid(n, "payerAccountId"), uuid(n, "payeeAccountId"), amount(n, "amountMinor"));
           if (externalRef != null) {
-            jdbc.sql("UPDATE payments SET external_ref = :r WHERE id = :id")
-                .param("r", externalRef)
-                .param("id", payment.id())
-                .update();
+            try {
+              jdbc.sql("UPDATE payments SET external_ref = :r WHERE id = :id")
+                  .param("r", externalRef)
+                  .param("id", payment.id())
+                  .update();
+            } catch (org.springframework.dao.DuplicateKeyException e) {
+              throw new LedgerException(
+                  409, "DUPLICATE_EXTERNAL_REF", "externalRef is already used by a payment");
+            }
           }
           return paymentView(payment, externalRef);
         });
@@ -153,6 +158,17 @@ public class LedgerController {
       @RequestHeader("Idempotency-Key") String key,
       @RequestBody String body) {
     return write(req, key, body, 200, n -> ledger.refund(id, amount(n, "amountMinor")));
+  }
+
+  @GetMapping("/payments")
+  public Object paymentByExternalRef(@RequestParam String externalRef) {
+    UUID id =
+        jdbc.sql("SELECT id FROM payments WHERE external_ref = :r")
+            .param("r", externalRef)
+            .query(UUID.class)
+            .optional()
+            .orElseThrow(() -> LedgerException.notFound("no payment with this externalRef"));
+    return payment(id);
   }
 
   @GetMapping("/payments/{id}")

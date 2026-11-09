@@ -165,4 +165,23 @@ class ApiIT extends IntegrationBase {
     var read = get("/payments/" + id);
     assertThat(json.readTree(read).get("externalRef").isNull()).isTrue();
   }
+
+  @Test
+  void lookupByExternalRef() throws Exception {
+    List<UUID> ids = fundedAccounts(2, 10_000);
+    var created = post("/payments", "p-ref-3", paymentBody(ids, 500, "order-lookup"));
+    String id = json.readTree(created.body()).get("id").asString();
+    var found = json.readTree(get("/payments?externalRef=order-lookup"));
+    assertThat(found.get("id").asString()).isEqualTo(id);
+  }
+
+  @Test
+  void duplicateExternalRefIs409() throws Exception {
+    List<UUID> ids = fundedAccounts(2, 10_000);
+    assertThat(post("/payments", "p-ref-4", paymentBody(ids, 500, "order-dup")).statusCode())
+        .isEqualTo(201);
+    var second = post("/payments", "p-ref-5", paymentBody(ids, 500, "order-dup"));
+    assertThat(second.statusCode()).isEqualTo(409);
+    assertThat(second.body()).contains("DUPLICATE_EXTERNAL_REF");
+  }
 }

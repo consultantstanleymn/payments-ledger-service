@@ -136,6 +136,27 @@ paths:
           $ref: '#/components/responses/Error'
         '422':
           $ref: '#/components/responses/Error'
+    get:
+      operationId: getPaymentByExternalRef
+      summary: Find a payment by the caller reference
+      description: Returns the payment that carries this externalRef. Answers 404 when none exists.
+      tags: [Payments]
+      parameters:
+        - name: externalRef
+          in: query
+          required: true
+          schema:
+            type: string
+            maxLength: 64
+      responses:
+        '200':
+          description: Payment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '404':
+          $ref: '#/components/responses/Error'
   /payments/{id}:
     get:
       operationId: getPayment
