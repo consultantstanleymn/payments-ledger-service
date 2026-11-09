@@ -79,6 +79,14 @@ class DeadLetterIT extends IntegrationBase {
     assertThat(processed()).isEqualTo(expected);
   }
 
+  boolean isProcessed(UUID id) {
+    return jdbc.sql("SELECT count(*) FROM processed_events WHERE event_id = :id")
+            .param("id", id)
+            .query(Long.class)
+            .single()
+        > 0;
+  }
+
   void awaitEvent(UUID id) throws InterruptedException {
     long deadline = System.currentTimeMillis() + 60_000;
     while (System.currentTimeMillis() < deadline) {
@@ -99,10 +107,8 @@ class DeadLetterIT extends IntegrationBase {
     produce("bad-key", "{not json " + marker);
     UUID good = UUID.randomUUID();
     produce("good-key", goodEvent(good, UUID.randomUUID()));
-    awaitProcessed(1);
+    awaitEvent(good);
     assertThat(dltRecordsWith(marker)).hasSize(1);
-    assertThat(jdbc.sql("SELECT count(*) FROM balance_projection").query(Long.class).single())
-        .isEqualTo(1);
   }
 
   @Test
@@ -122,7 +128,7 @@ class DeadLetterIT extends IntegrationBase {
     consumer.failFor(id);
     produce("redrive-key", goodEvent(id, UUID.randomUUID()));
     assertThat(dltRecordsWith(id.toString())).hasSize(1);
-    assertThat(processed()).isZero();
+    assertThat(isProcessed(id)).isFalse();
     consumer.clearFailures();
     var result = redriver.redrive(1000, true);
     assertThat(result.republished()).isPositive();

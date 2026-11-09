@@ -77,7 +77,12 @@ class KafkaFlowIT extends IntegrationBase {
         var recs = c.poll(Duration.ofSeconds(1));
         idle = recs.isEmpty() ? idle + 1 : 0;
         for (ConsumerRecord<String, String> r : recs) {
-          String id = json.readTree(r.value()).get("eventId").asString();
+          String id;
+          try {
+            id = json.readTree(r.value()).get("eventId").asString();
+          } catch (RuntimeException notAnEvent) {
+            continue; // the dead-letter tests leave malformed records on this topic
+          }
           if (wanted.contains(id)) seen.merge(id, 1, Integer::sum);
         }
       }
