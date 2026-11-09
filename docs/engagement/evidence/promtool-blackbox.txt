@@ -1,2 +1,9 @@
   SUCCESS
 
+
+Live probe run 2026-11-09, VERIFIED LOCALLY (blackbox exporter v0.25.0 against the compose stack):
+curl '127.0.0.1:26790/probe?module=http_console&target=http://app:8080/console/'
+probe_http_status_code 200
+probe_success 1
+curl '127.0.0.1:26790/probe?module=http_2xx&target=http://app:8080/actuator/health/readiness'
+probe_success 1
