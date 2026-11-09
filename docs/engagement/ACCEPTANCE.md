@@ -8,4 +8,4 @@
 | L-6 | The k6 smoke fails when SLO thresholds fail. The image digest is a CI artifact. | k6 exit code 99 on a forced slow run and workflow linted. | k6 run load/ledger.js; test $? -eq 99 | load/ledger.js, lab/k6-threshold.evidence.txt | met locally (k6); authored, not run (CI) |
 | L-7 | Caller audit log with client id, route, idempotency key, outcome, trace id. Append-only log. | IT passes and UPDATE and DELETE fail. | ./mvnw -B -Dit.test=CallerAuditIT verify | CallerAuditIT.java | met locally |
 | L-8 | A short STRIDE section for the money path and one risk decision. | files exist. | test -f docs/engagement/THREAT-MODEL.md && test -f docs/engagement/RISK-DECISION.md | docs/engagement/THREAT-MODEL.md, docs/engagement/RISK-DECISION.md | met locally |
-| L-9 | ADR for Kafka vs SQS and SNS vs a managed stream, decision level only. | file exists. | test -f adr/0003-streaming-choice.md | adr/0003-streaming-choice.md | not started |
+| L-9 | ADR for Kafka vs SQS and SNS vs a managed stream, decision level only. | file exists. | test -f adr/0003-streaming-choice.md | adr/0003-streaming-choice.md | met locally |
