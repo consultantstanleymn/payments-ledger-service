@@ -1,0 +1,16 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known public test values"
+paths = [
+  # Build output and downloaded agent jar are not tracked.
+  '''target/.*''',
+  '''\.data/.*''',
+  '''otel/opentelemetry-javaagent\.jar''',
+  '''docs/engagement/evidence/.*''',
+]
+regexes = [
+  # Local-only Grafana admin default used in compose for lab runs.
+  '''local-only''',
+]
