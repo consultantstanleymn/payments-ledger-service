@@ -1,0 +1,26 @@
+# Evidence: Grafana SLO dashboard screenshot after a 2 minute k6 run
+label: VERIFIED LOCALLY
+date: 2026-11-09 06:54 UTC
+code commit: b76f5c9f54a191710b95a16df308b298b40bb838
+working tree clean at run time: yes
+machine: MacBook Pro (mid 2015), 8 logical CPUs, 16 GB RAM, Fedora 44, podman 5.8.7 (measured on one laptop)
+command: podman-compose --profile obs up -d --build; k6 run -e VUS=5 -e DURATION=2m load/ledger.js; screenshot of http://127.0.0.1:25330/d/ledger-slo
+notes: Image grafana-ledger-slo.png was taken from the running dashboard. The burn-rate panels are below the visible area of this screenshot. Values are near 100 percent because the run had no faults. Numbers are measured on one laptop.
+---
+uptime start:  01:50:33 up  2:07,  1 user,  load average: 2.17, 3.27, 2.83
+ledger_app_1
+ledger_prometheus_1
+ledger_grafana_1
+{"groups":["liveness","readiness"],"status":"UP"}
+    http_req_failed
+    invariant_violations
+    invariant_violations...........: 0      0/s
+    http_req_duration..............: avg=19.76ms min=373.6µs  med=18.57ms max=158.61ms p(90)=40.62ms p(95)=49.44ms
+    http_req_failed................: 0.00%  0 out of 30166
+    iterations.....................: 30104  248.811111/s
+2
+[1794207209.230,"1"]
+shot ok
+uptime end:  01:53:38 up  2:10,  1 user,  load average: 1.67, 2.80, 2.74
+0433b5303593917cdab01d13f17c2b9e2f321299377fa3604b17f8d84cf2ea91
+ledger_default
