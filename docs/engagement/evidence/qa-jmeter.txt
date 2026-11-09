@@ -1,0 +1,13 @@
+JMeter load run, local laptop numbers. Date 2026-11-09. Base commit e47b80d.
+Command: qa-suite/scripts/qa-run.sh perf (20 threads, 30 s ramp, 120 s hold) against the local compose stack.
+Label: VERIFIED LOCALLY. Laptop numbers, not server numbers.
+
+summary =  31647 in 00:02:29 =  212.8/s Avg:    66 Min:     0 Max:   673 Err:     0 (0.00%)
+
+sampler               samples   errorPct     p95 ms      limit status
+----------------------------------------------------------------------------
+Total                   31647      0.000      138.0        1.0 PASS
+authorize               10520      0.000       86.0      300.0 PASS
+capture                 10517      0.000      118.0      300.0 PASS
+get payment             10510      0.000      155.0      300.0 PASS
+gate status: PASS
