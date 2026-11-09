@@ -1,1 +1,80 @@
-groups: []
+# Generated shape: recording rules for three SLIs, then multi-window burn-rate alerts.
+groups:
+- name: ledger-slo-recording
+  interval: 1m
+  rules:
+  - record: ledger:transfer_availability:ratio_rate5m
+    expr: sum(rate(http_server_requests_seconds_count{uri="/transfers",method="POST",status!~"5.."}[5m])) / sum(rate(http_server_requests_seconds_count{uri="/transfers",method="POST",status!~"4.."}[5m]))
+  - record: ledger:transfer_availability:ratio_rate30m
+    expr: sum(rate(http_server_requests_seconds_count{uri="/transfers",method="POST",status!~"5.."}[30m])) / sum(rate(http_server_requests_seconds_count{uri="/transfers",method="POST",status!~"4.."}[30m]))
+  - record: ledger:transfer_availability:ratio_rate1h
+    expr: sum(rate(http_server_requests_seconds_count{uri="/transfers",method="POST",status!~"5.."}[1h])) / sum(rate(http_server_requests_seconds_count{uri="/transfers",method="POST",status!~"4.."}[1h]))
+  - record: ledger:transfer_availability:ratio_rate6h
+    expr: sum(rate(http_server_requests_seconds_count{uri="/transfers",method="POST",status!~"5.."}[6h])) / sum(rate(http_server_requests_seconds_count{uri="/transfers",method="POST",status!~"4.."}[6h]))
+  - record: ledger:transfer_latency:ratio_rate5m
+    expr: sum(rate(http_server_requests_seconds_bucket{uri="/transfers",method="POST",le="0.3"}[5m])) / sum(rate(http_server_requests_seconds_count{uri="/transfers",method="POST"}[5m]))
+  - record: ledger:transfer_latency:ratio_rate30m
+    expr: sum(rate(http_server_requests_seconds_bucket{uri="/transfers",method="POST",le="0.3"}[30m])) / sum(rate(http_server_requests_seconds_count{uri="/transfers",method="POST"}[30m]))
+  - record: ledger:transfer_latency:ratio_rate1h
+    expr: sum(rate(http_server_requests_seconds_bucket{uri="/transfers",method="POST",le="0.3"}[1h])) / sum(rate(http_server_requests_seconds_count{uri="/transfers",method="POST"}[1h]))
+  - record: ledger:transfer_latency:ratio_rate6h
+    expr: sum(rate(http_server_requests_seconds_bucket{uri="/transfers",method="POST",le="0.3"}[6h])) / sum(rate(http_server_requests_seconds_count{uri="/transfers",method="POST"}[6h]))
+  - record: ledger:transfer_freshness:ratio_rate5m
+    expr: sum(rate(ledger_projection_lag_seconds_bucket{le="5.0"}[5m])) / sum(rate(ledger_projection_lag_seconds_count[5m]))
+  - record: ledger:transfer_freshness:ratio_rate30m
+    expr: sum(rate(ledger_projection_lag_seconds_bucket{le="5.0"}[30m])) / sum(rate(ledger_projection_lag_seconds_count[30m]))
+  - record: ledger:transfer_freshness:ratio_rate1h
+    expr: sum(rate(ledger_projection_lag_seconds_bucket{le="5.0"}[1h])) / sum(rate(ledger_projection_lag_seconds_count[1h]))
+  - record: ledger:transfer_freshness:ratio_rate6h
+    expr: sum(rate(ledger_projection_lag_seconds_bucket{le="5.0"}[6h])) / sum(rate(ledger_projection_lag_seconds_count[6h]))
+- name: ledger-slo-alerts
+  interval: 1m
+  rules:
+  - alert: LedgerTransferAvailabilityBurnFast
+    expr: (1 - ledger:transfer_availability:ratio_rate1h) > 0.072 and (1 - ledger:transfer_availability:ratio_rate5m) > 0.072
+    for: 2m
+    labels:
+      severity: page
+    annotations:
+      summary: Availability error budget burns fast (factor 14.4, windows 1h and 5m)
+      runbook_url: docs/engagement/RUNBOOK.md#availability-burn
+  - alert: LedgerTransferAvailabilityBurnSlow
+    expr: (1 - ledger:transfer_availability:ratio_rate6h) > 0.03 and (1 - ledger:transfer_availability:ratio_rate30m) > 0.03
+    for: 15m
+    labels:
+      severity: ticket
+    annotations:
+      summary: Availability error budget burns slowly (factor 6, windows 6h and 30m)
+      runbook_url: docs/engagement/RUNBOOK.md#availability-burn
+  - alert: LedgerTransferLatencyBurnFast
+    expr: (1 - ledger:transfer_latency:ratio_rate1h) > 0.144 and (1 - ledger:transfer_latency:ratio_rate5m) > 0.144
+    for: 2m
+    labels:
+      severity: page
+    annotations:
+      summary: Latency error budget burns fast (factor 14.4, windows 1h and 5m)
+      runbook_url: docs/engagement/RUNBOOK.md#latency-burn
+  - alert: LedgerTransferLatencyBurnSlow
+    expr: (1 - ledger:transfer_latency:ratio_rate6h) > 0.06 and (1 - ledger:transfer_latency:ratio_rate30m) > 0.06
+    for: 15m
+    labels:
+      severity: ticket
+    annotations:
+      summary: Latency error budget burns slowly (factor 6, windows 6h and 30m)
+      runbook_url: docs/engagement/RUNBOOK.md#latency-burn
+  - alert: LedgerTransferFreshnessBurnFast
+    expr: (1 - ledger:transfer_freshness:ratio_rate1h) > 0.144 and (1 - ledger:transfer_freshness:ratio_rate5m) > 0.144
+    for: 2m
+    labels:
+      severity: page
+    annotations:
+      summary: Freshness error budget burns fast (factor 14.4, windows 1h and 5m)
+      runbook_url: docs/engagement/RUNBOOK.md#freshness-burn
+  - alert: LedgerTransferFreshnessBurnSlow
+    expr: (1 - ledger:transfer_freshness:ratio_rate6h) > 0.06 and (1 - ledger:transfer_freshness:ratio_rate30m) > 0.06
+    for: 15m
+    labels:
+      severity: ticket
+    annotations:
+      summary: Freshness error budget burns slowly (factor 6, windows 6h and 30m)
+      runbook_url: docs/engagement/RUNBOOK.md#freshness-burn

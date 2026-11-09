@@ -1,0 +1,154 @@
+rule_files:
+  - slo.rules.yml
+evaluation_interval: 1m
+tests:
+  - interval: 1m
+    input_series:
+    - series: http_server_requests_seconds_count{uri="/transfers",method="POST",status="200"}
+      values: 0+100x300
+    - series: http_server_requests_seconds_count{uri="/transfers",method="POST",status="500"}
+      values: 0+15x300
+    alert_rule_test:
+    - eval_time: 90m
+      alertname: LedgerTransferAvailabilityBurnFast
+      exp_alerts:
+      - exp_labels:
+          severity: page
+        exp_annotations:
+          summary: Availability error budget burns fast (factor 14.4, windows 1h and 5m)
+          runbook_url: docs/engagement/RUNBOOK.md#availability-burn
+  - interval: 1m
+    input_series:
+    - series: http_server_requests_seconds_count{uri="/transfers",method="POST",status="200"}
+      values: 0+100x300
+    - series: http_server_requests_seconds_count{uri="/transfers",method="POST",status="500"}
+      values: 0+0x300
+    alert_rule_test:
+    - eval_time: 90m
+      alertname: LedgerTransferAvailabilityBurnFast
+      exp_alerts: []
+  - interval: 1m
+    input_series:
+    - series: http_server_requests_seconds_count{uri="/transfers",method="POST",status="200"}
+      values: 0+100x300
+    - series: http_server_requests_seconds_count{uri="/transfers",method="POST",status="500"}
+      values: 0+15x300
+    alert_rule_test:
+    - eval_time: 200m
+      alertname: LedgerTransferAvailabilityBurnSlow
+      exp_alerts:
+      - exp_labels:
+          severity: ticket
+        exp_annotations:
+          summary: Availability error budget burns slowly (factor 6, windows 6h and 30m)
+          runbook_url: docs/engagement/RUNBOOK.md#availability-burn
+  - interval: 1m
+    input_series:
+    - series: http_server_requests_seconds_count{uri="/transfers",method="POST",status="200"}
+      values: 0+100x300
+    - series: http_server_requests_seconds_count{uri="/transfers",method="POST",status="500"}
+      values: 0+0x300
+    alert_rule_test:
+    - eval_time: 200m
+      alertname: LedgerTransferAvailabilityBurnSlow
+      exp_alerts: []
+  - interval: 1m
+    input_series:
+    - series: http_server_requests_seconds_count{uri="/transfers",method="POST"}
+      values: 0+100x300
+    - series: http_server_requests_seconds_bucket{uri="/transfers",method="POST",le="0.3"}
+      values: 0+50x300
+    alert_rule_test:
+    - eval_time: 90m
+      alertname: LedgerTransferLatencyBurnFast
+      exp_alerts:
+      - exp_labels:
+          severity: page
+        exp_annotations:
+          summary: Latency error budget burns fast (factor 14.4, windows 1h and 5m)
+          runbook_url: docs/engagement/RUNBOOK.md#latency-burn
+  - interval: 1m
+    input_series:
+    - series: http_server_requests_seconds_count{uri="/transfers",method="POST"}
+      values: 0+100x300
+    - series: http_server_requests_seconds_bucket{uri="/transfers",method="POST",le="0.3"}
+      values: 0+100x300
+    alert_rule_test:
+    - eval_time: 90m
+      alertname: LedgerTransferLatencyBurnFast
+      exp_alerts: []
+  - interval: 1m
+    input_series:
+    - series: http_server_requests_seconds_count{uri="/transfers",method="POST"}
+      values: 0+100x300
+    - series: http_server_requests_seconds_bucket{uri="/transfers",method="POST",le="0.3"}
+      values: 0+50x300
+    alert_rule_test:
+    - eval_time: 200m
+      alertname: LedgerTransferLatencyBurnSlow
+      exp_alerts:
+      - exp_labels:
+          severity: ticket
+        exp_annotations:
+          summary: Latency error budget burns slowly (factor 6, windows 6h and 30m)
+          runbook_url: docs/engagement/RUNBOOK.md#latency-burn
+  - interval: 1m
+    input_series:
+    - series: http_server_requests_seconds_count{uri="/transfers",method="POST"}
+      values: 0+100x300
+    - series: http_server_requests_seconds_bucket{uri="/transfers",method="POST",le="0.3"}
+      values: 0+100x300
+    alert_rule_test:
+    - eval_time: 200m
+      alertname: LedgerTransferLatencyBurnSlow
+      exp_alerts: []
+  - interval: 1m
+    input_series:
+    - series: ledger_projection_lag_seconds_count
+      values: 0+100x300
+    - series: ledger_projection_lag_seconds_bucket{le="5.0"}
+      values: 0+50x300
+    alert_rule_test:
+    - eval_time: 90m
+      alertname: LedgerTransferFreshnessBurnFast
+      exp_alerts:
+      - exp_labels:
+          severity: page
+        exp_annotations:
+          summary: Freshness error budget burns fast (factor 14.4, windows 1h and 5m)
+          runbook_url: docs/engagement/RUNBOOK.md#freshness-burn
+  - interval: 1m
+    input_series:
+    - series: ledger_projection_lag_seconds_count
+      values: 0+100x300
+    - series: ledger_projection_lag_seconds_bucket{le="5.0"}
+      values: 0+100x300
+    alert_rule_test:
+    - eval_time: 90m
+      alertname: LedgerTransferFreshnessBurnFast
+      exp_alerts: []
+  - interval: 1m
+    input_series:
+    - series: ledger_projection_lag_seconds_count
+      values: 0+100x300
+    - series: ledger_projection_lag_seconds_bucket{le="5.0"}
+      values: 0+50x300
+    alert_rule_test:
+    - eval_time: 200m
+      alertname: LedgerTransferFreshnessBurnSlow
+      exp_alerts:
+      - exp_labels:
+          severity: ticket
+        exp_annotations:
+          summary: Freshness error budget burns slowly (factor 6, windows 6h and 30m)
+          runbook_url: docs/engagement/RUNBOOK.md#freshness-burn
+  - interval: 1m
+    input_series:
+    - series: ledger_projection_lag_seconds_count
+      values: 0+100x300
+    - series: ledger_projection_lag_seconds_bucket{le="5.0"}
+      values: 0+100x300
+    alert_rule_test:
+    - eval_time: 200m
+      alertname: LedgerTransferFreshnessBurnSlow
+      exp_alerts: []
