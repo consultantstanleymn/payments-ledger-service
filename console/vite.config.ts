@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
@@ -14,6 +14,12 @@ export default defineConfig({
       '/reconciliations': 'http://127.0.0.1:18080',
       '/admin': 'http://127.0.0.1:18080'
     }
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    globals: true,
+    exclude: ['node_modules/**', 'e2e/**', 'e2e-live/**']
   },
   build: {
     outDir: '../src/main/resources/static/console',
