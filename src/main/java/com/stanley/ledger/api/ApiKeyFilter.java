@@ -23,7 +23,10 @@ public class ApiKeyFilter extends OncePerRequestFilter {
   protected boolean shouldNotFilter(HttpServletRequest request) {
     String p = request.getRequestURI();
     // Admin routes check their own X-Admin-Key in AdminController.
-    return p.startsWith("/actuator") || p.startsWith("/admin/") || p.equals("/openapi.yaml");
+    return p.startsWith("/actuator")
+        || p.startsWith("/admin/")
+        || p.equals("/openapi.yaml")
+        || p.startsWith("/console");
   }
 
   @Override

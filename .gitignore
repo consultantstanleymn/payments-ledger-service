@@ -5,3 +5,8 @@ target/
 .vscode/
 otel/opentelemetry-javaagent.jar
 qa-suite/target/
+src/main/resources/static/console/
+console/node_modules/
+console/test-results/
+console/playwright-report/
+console/dist/
