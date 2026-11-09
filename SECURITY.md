@@ -13,6 +13,19 @@ This is a portfolio project. It is not hardened for production. This page lists 
 - The container image runs as a non-root user (uid 1000).
 - No card data and no real personal data. Test accounts hold names such as `bank` and `acct-1`.
 
+## Added in the reliability work
+
+- An append-only caller audit log (`caller_audit`). A trigger rejects UPDATE and DELETE. Each row holds the client name, route pattern, idempotency key, outcome and trace id. It never holds the API key.
+- A dead-letter topic `ledger.events.DLT` for malformed events.
+- An admin redrive route that needs `X-Admin-Key`. With no admin key set, it answers 403.
+
+## Known gaps
+
+- A superuser or TRUNCATE can still remove audit rows. The trigger is not a full control.
+- A failed audit write does not fail the request (ADR 0002). A counter shows the gap.
+- Static API keys remain (see `docs/engagement/RISK-DECISION.md`).
+- No rate limit on writes.
+
 ## What does not exist
 
 - No OAuth2, no JWT, no per-client permissions, no key rotation. The static key `dev-key-local-only` in `application.yml` is a local development value.
@@ -21,10 +34,10 @@ This is a portfolio project. It is not hardened for production. This page lists 
 - No rate limiting. A client can send many requests.
 - Actuator endpoints `health` and `prometheus` are open. A real deployment must put them on a private port.
 - Database and Redpanda use fixed local passwords or no authentication (`ledger/ledger` for Postgres). Local only.
-- No audit log of who called what, beyond the journal and the idempotency table.
+- The caller audit log is append-only by trigger only (see Known gaps above).
 - No encryption of data at rest or of Kafka messages.
-- No dependency scanning is configured, and Dependabot is not set up. CodeQL is configured in CI and has not run.
-- No penetration test, no threat model beyond this list.
+- Dependency, image and secret scans exist as a workflow (`security.yml`) and ran locally. The workflow has not run on GitHub. Dependabot is not set up. CodeQL is configured in CI and has not run.
+- No penetration test. A short STRIDE review of the money path is in `docs/engagement/THREAT-MODEL.md`.
 - Payloads on Kafka carry account ids and amounts in clear text.
 
 ## PCI-DSS

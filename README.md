@@ -12,6 +12,29 @@ OpenTelemetry (Java agent, Collector, Jaeger), JUnit 5, jqwik, Testcontainers, k
 Status: all checks below ran on one laptop. The GitHub Actions workflows exist but have not run yet.
 See "Verified and not verified".
 
+## Verified locally
+
+All rows ran on one laptop. Numbers are measured on one laptop.
+
+| Claim | Command | Evidence | Date |
+|---|---|---|---|
+| Three SLIs with burn-rate alerts, six alerts tested with promtool | `promtool test rules` (see `docs/engagement/evidence/promtool-slo-rules.txt`) | `docs/engagement/evidence/promtool-slo-rules.txt` | 2026-11-09 |
+| Grafana SLO dashboard with live data after a k6 run | `podman-compose --profile obs up -d --build` | `docs/engagement/evidence/grafana-ledger-slo.png` | 2026-11-09 |
+| Five failure scenarios, invariants pass after each | `lab/0*.sh` | `docs/engagement/evidence/lab-0*.txt` | 2026-11-09 |
+| Dead-letter topic and once-only redrive | `./mvnw -B verify -Dit.test=DeadLetterIT` | `src/test/java/com/stanley/ledger/DeadLetterIT.java` | 2026-11-09 |
+| Rollback by image digest across an expand and contract migration | `scripts/rollout.sh` | `docs/engagement/evidence/rollout-rollback-digest.txt` | 2026-11-09 |
+| k6 SLO gate exits 99 on a forced slow run | `k6 run load/ledger.js` | `docs/engagement/evidence/k6-slo-gate.txt` | 2026-11-09 |
+| Append-only caller audit log | `./mvnw -B verify -Dit.test=CallerAuditIT` | `src/test/java/com/stanley/ledger/CallerAuditIT.java` | 2026-11-09 |
+| Security scans: gitleaks, semgrep, trivy (source and image) | see `docs/engagement/SECURITY-GATE.md` | `docs/engagement/evidence/security-gate-local.txt` | 2026-11-09 |
+
+## Authored, not run
+
+| File | What it would do | Why it did not run |
+|---|---|---|
+| `.github/workflows/ci.yml` (digest artifact, promtool job, SLO thresholds) | Run the new checks on GitHub | Authored, not run: this file is written and syntax-checked with `actionlint 1.7.12`. It was not executed against GitHub Actions. Reason: needs GitHub Actions. |
+| `.github/workflows/security.yml` | Run the five security jobs | Authored, not run: this file is written and syntax-checked with `actionlint 1.7.12`. It was not executed against GitHub Actions. Reason: needs GitHub Actions. |
+| `docker compose` check of the new profiles | Validate with the Docker plugin | The Docker compose plugin is not installed here. Only `podman compose config` ran. |
+
 ## Architecture
 
 ```mermaid
