@@ -396,6 +396,10 @@ components:
           type: integer
           format: int64
           minimum: 1
+        externalRef:
+          type: string
+          maxLength: 64
+          description: Optional reference from the caller. Stored with the payment.
     Payment:
       type: object
       properties:
@@ -419,6 +423,10 @@ components:
         refundedMinor:
           type: integer
           format: int64
+        externalRef:
+          type: string
+          nullable: true
+          description: Reference from the caller, or null.
         status:
           type: string
           enum: [AUTHORIZED, CAPTURED, VOIDED]

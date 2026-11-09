@@ -139,4 +139,30 @@ class ApiIT extends IntegrationBase {
             HttpResponse.BodyHandlers.ofString())
         .body();
   }
+
+  String paymentBody(List<UUID> ids, long amount, String ref) {
+    String extra = ref == null ? "" : ",\"externalRef\":\"" + ref + "\"";
+    return "{\"payerAccountId\":\"%s\",\"payeeAccountId\":\"%s\",\"amountMinor\":%d%s}"
+        .formatted(ids.get(1), ids.get(2), amount, extra);
+  }
+
+  @Test
+  void paymentStoresExternalRef() throws Exception {
+    List<UUID> ids = fundedAccounts(2, 10_000);
+    var created = post("/payments", "p-ref-1", paymentBody(ids, 500, "order-77"));
+    assertThat(created.statusCode()).isEqualTo(201);
+    String id = json.readTree(created.body()).get("id").asString();
+    var read = get("/payments/" + id);
+    assertThat(json.readTree(read).get("externalRef").asString()).isEqualTo("order-77");
+  }
+
+  @Test
+  void paymentWithoutExternalRefStillWorks() throws Exception {
+    List<UUID> ids = fundedAccounts(2, 10_000);
+    var created = post("/payments", "p-ref-2", paymentBody(ids, 500, null));
+    assertThat(created.statusCode()).isEqualTo(201);
+    String id = json.readTree(created.body()).get("id").asString();
+    var read = get("/payments/" + id);
+    assertThat(json.readTree(read).get("externalRef").isNull()).isTrue();
+  }
 }

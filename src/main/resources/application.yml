@@ -1,4 +1,7 @@
 spring:
+  flyway:
+    # An older image accepts migrations that a newer image applied. Needed for rollback.
+    ignore-migration-patterns: "*:future"
   application:
     name: payments-ledger
   datasource:

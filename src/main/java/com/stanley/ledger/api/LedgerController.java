@@ -108,9 +108,19 @@ public class LedgerController {
         key,
         body,
         201,
-        n ->
-            ledger.authorize(
-                uuid(n, "payerAccountId"), uuid(n, "payeeAccountId"), amount(n, "amountMinor")));
+        n -> {
+          String externalRef = optionalRef(n);
+          var payment =
+              ledger.authorize(
+                  uuid(n, "payerAccountId"), uuid(n, "payeeAccountId"), amount(n, "amountMinor"));
+          if (externalRef != null) {
+            jdbc.sql("UPDATE payments SET external_ref = :r WHERE id = :id")
+                .param("r", externalRef)
+                .param("id", payment.id())
+                .update();
+          }
+          return paymentView(payment, externalRef);
+        });
   }
 
   @PostMapping("/payments/{id}/capture")
@@ -147,7 +157,40 @@ public class LedgerController {
 
   @GetMapping("/payments/{id}")
   public Object payment(@PathVariable UUID id) {
-    return ledger.payment(id);
+    var payment = ledger.payment(id);
+    String ref =
+        jdbc.sql("SELECT external_ref FROM payments WHERE id = :id")
+            .param("id", id)
+            .query(String.class)
+            .optional()
+            .orElse(null);
+    return paymentView(payment, ref);
+  }
+
+  private static Map<String, Object> paymentView(
+      com.stanley.ledger.ledger.PaymentState p, String externalRef) {
+    Map<String, Object> m = new LinkedHashMap<>();
+    m.put("id", p.id());
+    m.put("payerId", p.payerId());
+    m.put("payeeId", p.payeeId());
+    m.put("currency", p.currency());
+    m.put("authorizedMinor", p.authorizedMinor());
+    m.put("capturedMinor", p.capturedMinor());
+    m.put("refundedMinor", p.refundedMinor());
+    m.put("status", p.status());
+    m.put("externalRef", externalRef);
+    return m;
+  }
+
+  private static String optionalRef(JsonNode n) {
+    JsonNode v = n.get("externalRef");
+    if (v == null || v.isNull()) {
+      return null;
+    }
+    if (!v.isString() || v.asString().isBlank() || v.asString().length() > 64) {
+      throw LedgerException.invalid("externalRef must be a string of 1 to 64 characters");
+    }
+    return v.asString();
   }
 
   @PostMapping(
