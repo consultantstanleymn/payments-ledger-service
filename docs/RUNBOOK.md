@@ -28,6 +28,10 @@ Every value except `outbox_pending` must be 0. `outbox_pending` counts events no
 It falls to 0 when the system is idle. The script waits for it (default 600 seconds, set `WAIT_SECONDS`).
 A non-zero `unbalanced_transactions` is a severity-1 bug. Stop writes and investigate.
 
+## Alerts, dead letters and rollback
+
+See [`docs/engagement/RUNBOOK.md`](engagement/RUNBOOK.md) for the burn-rate alerts, the dead-letter topic, the redrive command, rollback by digest, and audit write failures.
+
 ## Problems and fixes
 
 **The read model is behind the ledger.**
