@@ -98,4 +98,12 @@ class CallerAuditIT extends IntegrationBase {
     assertThat(rows.get(0)).containsEntry("client_id", "anonymous").containsEntry("status", 401);
     assertThat(rows.get(0)).containsEntry("outcome", "rejected");
   }
+
+  @Test
+  void adminRedriveAnswers403WithoutAnAdminKey() throws Exception {
+    var none = call("POST", "/admin/dlt/redrive?max=1", null, null, null);
+    var wrong = call("POST", "/admin/dlt/redrive?max=1", "dev-key-local-only", null, null);
+    assertThat(none.statusCode()).isEqualTo(403);
+    assertThat(wrong.statusCode()).isEqualTo(403);
+  }
 }
