@@ -1,0 +1,51 @@
+Console live run. Date 2026-11-09. Base commit 0494a43.
+Command: scripts/console-live-check.sh (builds the console and jar, starts the compose stack, runs Playwright against http://127.0.0.1:18080/console/, stops the stack).
+Label: VERIFIED LOCALLY.
+
+
+> payments-ledger-console@0.1.0 build
+> tsc --noEmit && vite build
+
+vite v7.3.8 building client environment for production...
+transforming...
+✓ 57 modules transformed.
+rendering chunks...
+computing gzip size...
+../src/main/resources/static/console/index.html                   0.43 kB │ gzip:  0.28 kB
+../src/main/resources/static/console/assets/index-CXLjIGuv.css   11.03 kB │ gzip:  2.87 kB
+../src/main/resources/static/console/assets/index-6eUlsyfL.js   267.77 kB │ gzip: 84.24 kB
+✓ built in 2.17s
+STEP 1/6: FROM docker.io/library/eclipse-temurin:25-jre-alpine
+STEP 2/6: WORKDIR /app
+--> Using cache c7c390d578bd8303201a9fbf48d303cbb085a9676c52c54687ba055f85f16502
+--> c7c390d578bd
+STEP 3/6: COPY target/payments-ledger-service-0.1.0.jar app.jar
+--> f66b84f62da0
+STEP 4/6: COPY otel/opentelemetry-javaagent.jar /otel/opentelemetry-javaagent.jar
+--> 16a548663ed2
+STEP 5/6: USER 1000:1000
+--> fcd3b03d1257
+STEP 6/6: ENTRYPOINT ["java", "-javaagent:/otel/opentelemetry-javaagent.jar", "-Xmx384m", "-jar", "app.jar"]
+COMMIT payments-ledger-service:local
+--> 7be1364188ca
+Successfully tagged localhost/payments-ledger-service:local
+Waiting for health endpoint...
+curl: (56) Recv failure: Connection reset by peer
+curl: (56) Recv failure: Connection reset by peer
+curl: (56) Recv failure: Connection reset by peer
+curl: (56) Recv failure: Connection reset by peer
+curl: (56) Recv failure: Connection reset by peer
+curl: (56) Recv failure: Connection reset by peer
+curl: (56) Recv failure: Connection reset by peer
+curl: (56) Recv failure: Connection reset by peer
+curl: (56) Recv failure: Connection reset by peer
+curl: (56) Recv failure: Connection reset by peer
+curl: (56) Recv failure: Connection reset by peer
+
+Running 1 test using 1 worker
+
+[1/1] [chromium] › e2e-live/live.spec.ts:123:1 › live console flow
+  1 passed (3.2s)
+CONSOLE LIVE OK
+time="2026-11-09T16:52:15-05:00" level=warning msg="StopSignal SIGTERM failed to stop container ledger_app_1 in 10 seconds, resorting to SIGKILL"
+DONE 0
