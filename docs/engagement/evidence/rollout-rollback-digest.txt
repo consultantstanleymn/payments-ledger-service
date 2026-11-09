@@ -1,0 +1,48 @@
+# Evidence: Rollout and rollback by image digest across migrations V2 and V3
+label: VERIFIED LOCALLY
+date: 2026-11-09 07:45 UTC
+code commit: ff48cefeea093dacecbbf929d0d126cb889db82f
+working tree clean at run time: yes
+machine: MacBook Pro (mid 2015), 8 logical CPUs, 16 GB RAM, Fedora 44, podman 5.8.7 (measured on one laptop)
+command: flock heavy.lock nice -n 10 scripts/rollout.sh
+notes: Both images were run by digest. Rollback to the old image worked with V2 and V3 applied. The old image needs the Flyway ignore-future setting (set by environment variable). Not a production deploy. Numbers measured on one laptop.
+---
+uptime start:  02:42:08 up  2:58,  1 user,  load average: 4.31, 3.53, 2.91
+=== 1. build v1 from 30ffa1556bab3b07742ad7edeab1dc2d7bb0a122 (before V2 and V3)
+=== 2. build v2 from HEAD 5a28467
+=== 3. digests
+v1 digest: sha256:c83fa25a3b1d00345d6980c442a358d40c1c8971d380b94fa448d9be9e11d14e
+v2 digest: sha256:86b4948c9e0db78c2bbc5c15f6467b199030f0ec4530dd9d570aa9c01bf46e90
+=== 4. start postgres and redpanda, run v1 by digest
+{"groups":["liveness","readiness"],"status":"UP"}
+    invariant_violations...........: 0      0/s
+    http_req_duration..............: avg=16.1ms min=557µs    med=18.32ms max=88.11ms p(90)=30.04ms p(95)=35.88ms
+    http_req_failed................: 0.00%  0 out of 5579
+    iterations.....................: 5517   179.292756/s
+unbalanced_transactions=0 accounts_below_floor=0 cache_vs_journal_diffs=0 projection_vs_ledger_diffs=0 sum_of_all_balances=0 outbox_pending=0
+invariants v1 exit=0
+v1 payment: c06431e1-46d9-4429-8abb-74bfac06b7e0
+=== 5. roll forward: stop v1, run v2 by digest (applies V2 and V3)
+{"groups":["liveness","readiness"],"status":"UP"}
+applied migrations: 1,2,3
+v2 payment with externalRef: 7629b004-c43c-4a3b-b426-96b3f15504e3
+{"id":"7629b004-c43c-4a3b-b426-96b3f15504e3","externalRef":"rollout-ref-1"}
+    invariant_violations...........: 0      0/s
+    http_req_duration..............: avg=16.23ms min=564.98µs med=18.23ms max=90.51ms p(90)=30.06ms p(95)=36.87ms
+    http_req_failed................: 0.00%  0 out of 5528
+    iterations.....................: 5466   178.192346/s
+unbalanced_transactions=0 accounts_below_floor=0 cache_vs_journal_diffs=0 projection_vs_ledger_diffs=0 sum_of_all_balances=0 outbox_pending=0
+invariants v2 exit=0
+=== 6. roll back: stop v2, run v1 by digest on the same database (V2 and V3 stay applied)
+{"groups":["liveness","readiness"],"status":"UP"}
+applied migrations after rollback: 1,2,3
+    invariant_violations...........: 0      0/s
+    http_req_duration..............: avg=17.01ms min=615.46µs med=18.44ms max=189.86ms p(90)=31.99ms p(95)=38.12ms
+    http_req_failed................: 0.00%  0 out of 5286
+    iterations.....................: 5224   169.189405/s
+v1 payment after rollback: ae3965ca-5474-4a3b-b4b2-3be4a966fa48
+unbalanced_transactions=0 accounts_below_floor=0 cache_vs_journal_diffs=0 projection_vs_ledger_diffs=0 sum_of_all_balances=0 outbox_pending=0
+invariants after rollback exit=0
+external_ref of the v1 payment after rollback (empty means NULL): []
+v2 data still readable by SQL: rollout-ref-1
+uptime end:  02:45:23 up  3:02,  1 user,  load average: 4.97, 4.05, 3.22
