@@ -52,7 +52,7 @@ public abstract class IntegrationBase {
   void cleanTables() {
     jdbc.sql(
             "TRUNCATE journal_entries, journal_transactions, payments, idempotency_keys,"
-                + " outbox_events, balance_projection, processed_events, recon_reports,"
+                + " outbox_events, balance_projection, processed_events, recon_reports, caller_audit,"
                 + " accounts CASCADE")
         .update();
   }
