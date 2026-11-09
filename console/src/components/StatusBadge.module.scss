@@ -1,0 +1,28 @@
+.badge {
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+}
+
+.authorized {
+  background: #e6f4ff;
+  color: #005a8c;
+}
+
+.captured {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.voided {
+  background: #f3e5f5;
+  color: #6a1b9a;
+}
+
+.default {
+  background: #eeeeee;
+  color: #333333;
+}
